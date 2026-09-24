@@ -7,3 +7,8 @@ node_modules/
 .env
 sessions.db
 *.log
+
+export-data.js
+database/migration-data.json
+database/*_backup.db
+database/export-db.js
