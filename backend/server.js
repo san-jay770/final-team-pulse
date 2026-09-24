@@ -35,8 +35,8 @@ const reportsRoutes       = require('./routes/reports');
 const notificationsRoutes = require('./routes/notifications');
 const adminRoutes         = require('./routes/admin');
 
-const app  = express();
-let PORT   = parseInt(process.env.PORT || '5000', 10);
+const app = express();
+let PORT = parseInt(process.env.PORT || '5000', 10);
 
 // ─────────────────────────────────────────────
 // Middleware
@@ -47,7 +47,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// Disable stale caching on mobile browsers during development & updates
+// Disable stale caching on mobile browsers
 app.use((req, res, next) => {
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
@@ -58,21 +58,29 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session configuration with SQLite store for persistence
+// ─────────────────────────────────────────────
+// Session Configuration
+// ─────────────────────────────────────────────
+
 app.use(session({
   store: new SQLiteStore({
     db: 'sessions.db',
     dir: path.join(__dirname, 'database'),
   }),
+
   secret: process.env.SESSION_SECRET || 'teampulse-secret-fallback',
+
   resave: false,
+
   saveUninitialized: false,
+
   cookie: {
-    httpOnly:  true,
-    sameSite:  'lax',
-    secure:    process.env.NODE_ENV === 'production',
-    maxAge:    8 * 60 * 60 * 1000, // 8 hours
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 8 * 60 * 60 * 1000,
   },
+
   name: 'teampulse.sid',
 }));
 
@@ -97,10 +105,10 @@ app.use('/api/admin',         adminRoutes);
 
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 
-// Serve static files with no-cache headers so code/HTML changes load immediately
 app.use(express.static(FRONTEND_DIR, {
   etag: false,
   lastModified: false,
+
   setHeaders: (res) => {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.set('Pragma', 'no-cache');
@@ -108,27 +116,45 @@ app.use(express.static(FRONTEND_DIR, {
   }
 }));
 
-// SPA-style fallback: serve index.html for unknown routes (except /api/*)
+// ─────────────────────────────────────────────
+// SPA Fallback
+// ─────────────────────────────────────────────
+
 app.get(/^(?!\/api).*/, (req, res) => {
+
   res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
   const reqPath = req.path;
 
+  // Home page
   if (reqPath === '/' || reqPath === '/index.html') {
-    return res.sendFile(path.join(FRONTEND_DIR, 'index.html'), err => {
-      if (err) res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
-    });
+    return res.sendFile(
+      path.join(FRONTEND_DIR, 'index.html'),
+      (err) => {
+        if (err) {
+          res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
+        }
+      }
+    );
   }
 
+  // HTML pages
   if (reqPath.endsWith('.html')) {
     const filePath = path.join(FRONTEND_DIR, reqPath);
-    return res.sendFile(filePath, err => {
-      if (err) res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
-    });
+
+    return res.sendFile(
+      filePath,
+      (err) => {
+        if (err) {
+          res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
+        }
+      }
+    );
   }
 
+  // Unknown frontend routes
   res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
 });
 
@@ -137,27 +163,55 @@ app.get(/^(?!\/api).*/, (req, res) => {
 // ─────────────────────────────────────────────
 
 app.use((err, req, res, _next) => {
-  console.error('[Server] Unhandled error:', err.message);
+
+  console.error(
+    '[Server] Unhandled error:',
+    err.message
+  );
 
   const statusCode = err.status || 500;
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Something went wrong. Please try again.'
-    : err.message;
+
+  const message =
+    process.env.NODE_ENV === 'production'
+      ? 'Something went wrong. Please try again.'
+      : err.message;
 
   if (req.path.startsWith('/api/')) {
-    return res.status(statusCode).json({ success: false, message });
+    return res
+      .status(statusCode)
+      .json({
+        success: false,
+        message
+      });
   }
 
-  res.status(statusCode).sendFile(path.join(FRONTEND_DIR, 'error.html'));
+  res
+    .status(statusCode)
+    .sendFile(
+      path.join(FRONTEND_DIR, 'error.html')
+    );
 });
 
-// Process Global Error Guards (Prevents server auto-shutdown on unhandled errors)
+// ─────────────────────────────────────────────
+// Process Global Error Guards
+// ─────────────────────────────────────────────
+
 process.on('uncaughtException', (err) => {
-  console.error('[Server] Safeguard caught uncaughtException:', err.stack || err.message);
+
+  console.error(
+    '[Server] Safeguard caught uncaughtException:',
+    err.stack || err.message
+  );
+
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Server] Safeguard caught unhandledRejection:', reason);
+
+  console.error(
+    '[Server] Safeguard caught unhandledRejection:',
+    reason
+  );
+
 });
 
 // ─────────────────────────────────────────────
@@ -167,72 +221,166 @@ process.on('unhandledRejection', (reason, promise) => {
 let activeHttpServer = null;
 
 function startServer(portToUse, retries = 2) {
+
   const server = http.createServer(app);
 
   server.on('error', (err) => {
+
     if (err.code === 'EADDRINUSE') {
+
       if (retries > 0) {
-        console.warn(`[Server] Port ${portToUse} is busy. Retrying in 500ms (${retries} attempts left)...`);
-        setTimeout(() => startServer(portToUse, retries - 1), 500);
+
+        console.warn(
+          `[Server] Port ${portToUse} is busy. ` +
+          `Retrying in 500ms (${retries} attempts left)...`
+        );
+
+        setTimeout(() => {
+          startServer(
+            portToUse,
+            retries - 1
+          );
+        }, 500);
+
       } else {
+
         const nextPort = portToUse + 1;
-        console.warn(`[Server] Port ${portToUse} is in use. Attempting fallback to port ${nextPort}...`);
+
+        console.warn(
+          `[Server] Port ${portToUse} is in use. ` +
+          `Attempting fallback to port ${nextPort}...`
+        );
+
         startServer(nextPort, 0);
       }
+
     } else {
-      console.error('[Server] Fatal server error:', err.message);
+
+      console.error(
+        '[Server] Fatal server error:',
+        err.message
+      );
+
     }
+
   });
 
-  server.listen(portToUse, '0.0.0.0', () => {
-    activeHttpServer = server;
-    console.log('');
-    console.log('╔═══════════════════════════════════════════════╗');
-    console.log('║          TEAM PULSE — Node.js Server          ║');
-    console.log('╠═══════════════════════════════════════════════╣');
-    console.log(`║  Server  : http://localhost:${portToUse}               ║`);
-    console.log(`║  API     : http://localhost:${portToUse}/api           ║`);
-    console.log(`║  Mode    : ${(process.env.NODE_ENV || 'development').padEnd(35)}║`);
-    console.log('╚═══════════════════════════════════════════════╝');
-    console.log('');
-    console.log('Default Super Admin Logins:');
-    console.log('  Email: sanjaysanjayt19@gmail.com   Password: Siva1908');
-    console.log('  Email: parthasharathy87@gmail.com  Password: partha2006');
-    console.log('');
+  server.listen(
+    portToUse,
+    '0.0.0.0',
+    () => {
 
-    // Start scheduled cron jobs
-    startCronJobs();
-  });
+      activeHttpServer = server;
+
+      console.log('');
+
+      console.log(
+        '╔═══════════════════════════════════════════════╗'
+      );
+
+      console.log(
+        '║          TEAM PULSE — Node.js Server          ║'
+      );
+
+      console.log(
+        '╠═══════════════════════════════════════════════╣'
+      );
+
+      console.log(
+        `║  Server  : http://localhost:${portToUse}               ║`
+      );
+
+      console.log(
+        `║  API     : http://localhost:${portToUse}/api           ║`
+      );
+
+      console.log(
+        `║  Mode    : ${(process.env.NODE_ENV || 'development').padEnd(35)}║`
+      );
+
+      console.log(
+        '╚═══════════════════════════════════════════════╝'
+      );
+
+      console.log('');
+
+      // Start scheduled cron jobs
+      startCronJobs();
+
+    }
+  );
 }
+
+// ─────────────────────────────────────────────
+// Graceful Shutdown
+// ─────────────────────────────────────────────
 
 function handleShutdown(signal) {
-  console.log(`\n[Server] Received ${signal}. Shutting down smoothly...`);
+
+  console.log(
+    `\n[Server] Received ${signal}. Shutting down smoothly...`
+  );
+
   if (activeHttpServer) {
+
     activeHttpServer.close(() => {
-      console.log('[Server] HTTP connections closed.');
+
+      console.log(
+        '[Server] HTTP connections closed.'
+      );
+
       process.exit(0);
+
     });
+
     setTimeout(() => {
+
       process.exit(0);
+
     }, 1500).unref();
+
   } else {
+
     process.exit(0);
+
   }
 }
 
-process.on('SIGTERM', () => handleShutdown('SIGTERM'));
-process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => {
+  handleShutdown('SIGTERM');
+});
+
+process.on('SIGINT', () => {
+  handleShutdown('SIGINT');
+});
+
+// ─────────────────────────────────────────────
+// Application Bootstrap
+// ─────────────────────────────────────────────
 
 async function bootstrap() {
+
   try {
-    // Initialize DB (create tables, seed data)
+
+    // Initialize database
+    // Creates tables and seeds initial admin
     await initDatabase();
+
+    // Start Express server
     startServer(PORT);
+
   } catch (err) {
-    console.error('[Server] Fatal startup error:', err.message);
+
+    console.error(
+      '[Server] Fatal startup error:',
+      err.message
+    );
+
     process.exit(1);
+
   }
+
 }
 
+// Start application
 bootstrap();
-
