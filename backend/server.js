@@ -1,3 +1,4 @@
+```js
 /**
  * TEAM PULSE — Main Express Server
  *
@@ -13,34 +14,39 @@
 
 require('dotenv').config();
 
-const express     = require('express');
-const session     = require('express-session');
+const express = require('express');
+const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
-const cors        = require('cors');
-const path        = require('path');
-const http        = require('http');
+const cors = require('cors');
+const path = require('path');
+const http = require('http');
 
 const { initDatabase } = require('./database/database');
 const { startCronJobs } = require('./services/cronService');
 
 // Route modules
-const authRoutes          = require('./routes/auth');
-const usersRoutes         = require('./routes/users');
-const teamsRoutes         = require('./routes/teams');
-const tasksRoutes         = require('./routes/tasks');
-const doubtsRoutes        = require('./routes/doubts');
-const suggestionsRoutes   = require('./routes/suggestions');
-const activitiesRoutes    = require('./routes/activities');
-const reportsRoutes       = require('./routes/reports');
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
+const teamsRoutes = require('./routes/teams');
+const tasksRoutes = require('./routes/tasks');
+const doubtsRoutes = require('./routes/doubts');
+const suggestionsRoutes = require('./routes/suggestions');
+const activitiesRoutes = require('./routes/activities');
+const reportsRoutes = require('./routes/reports');
 const notificationsRoutes = require('./routes/notifications');
-const adminRoutes         = require('./routes/admin');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
+
 let PORT = parseInt(process.env.PORT || '5000', 10);
 
 // ─────────────────────────────────────────────
 // Middleware
 // ─────────────────────────────────────────────
+
+// Render runs behind a reverse proxy.
+// Trust the first proxy so secure cookies work correctly.
+app.set('trust proxy', 1);
 
 app.use(cors({
   origin: true,
@@ -49,14 +55,23 @@ app.use(cors({
 
 // Disable stale caching on mobile browsers
 app.use((req, res, next) => {
-  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.set(
+    'Cache-Control',
+    'no-cache, no-store, must-revalidate'
+  );
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
   next();
 });
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({
+  limit: '10mb',
+}));
+
+app.use(express.urlencoded({
+  extended: true,
+  limit: '10mb',
+}));
 
 // ─────────────────────────────────────────────
 // Session Configuration
@@ -88,16 +103,16 @@ app.use(session({
 // API Routes
 // ─────────────────────────────────────────────
 
-app.use('/api/auth',          authRoutes);
-app.use('/api/users',         usersRoutes);
-app.use('/api/teams',         teamsRoutes);
-app.use('/api/tasks',         tasksRoutes);
-app.use('/api/doubts',        doubtsRoutes);
-app.use('/api/suggestions',   suggestionsRoutes);
-app.use('/api/activities',    activitiesRoutes);
-app.use('/api/reports',       reportsRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/teams', teamsRoutes);
+app.use('/api/tasks', tasksRoutes);
+app.use('/api/doubts', doubtsRoutes);
+app.use('/api/suggestions', suggestionsRoutes);
+app.use('/api/activities', activitiesRoutes);
+app.use('/api/reports', reportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
-app.use('/api/admin',         adminRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ─────────────────────────────────────────────
 // Serve Frontend Static Files
@@ -110,31 +125,41 @@ app.use(express.static(FRONTEND_DIR, {
   lastModified: false,
 
   setHeaders: (res) => {
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.set(
+      'Cache-Control',
+      'no-cache, no-store, must-revalidate'
+    );
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
-  }
+  },
 }));
 
 // ─────────────────────────────────────────────
 // SPA Fallback
 // ─────────────────────────────────────────────
 
-app.get(/^(?!\/api).*/, (req, res) => {
-
-  res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+app.get(/^(?!\/api\/).*/, (req, res) => {
+  res.set(
+    'Cache-Control',
+    'no-cache, no-store, must-revalidate'
+  );
   res.set('Pragma', 'no-cache');
   res.set('Expires', '0');
 
   const reqPath = req.path;
 
   // Home page
-  if (reqPath === '/' || reqPath === '/index.html') {
+  if (
+    reqPath === '/' ||
+    reqPath === '/index.html'
+  ) {
     return res.sendFile(
       path.join(FRONTEND_DIR, 'index.html'),
       (err) => {
         if (err) {
-          res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
+          return res.sendFile(
+            path.join(FRONTEND_DIR, 'login.html')
+          );
         }
       }
     );
@@ -142,20 +167,27 @@ app.get(/^(?!\/api).*/, (req, res) => {
 
   // HTML pages
   if (reqPath.endsWith('.html')) {
-    const filePath = path.join(FRONTEND_DIR, reqPath);
+    const filePath = path.join(
+      FRONTEND_DIR,
+      reqPath
+    );
 
     return res.sendFile(
       filePath,
       (err) => {
         if (err) {
-          res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
+          return res.sendFile(
+            path.join(FRONTEND_DIR, 'login.html')
+          );
         }
       }
     );
   }
 
   // Unknown frontend routes
-  res.sendFile(path.join(FRONTEND_DIR, 'login.html'));
+  return res.sendFile(
+    path.join(FRONTEND_DIR, 'login.html')
+  );
 });
 
 // ─────────────────────────────────────────────
@@ -163,7 +195,6 @@ app.get(/^(?!\/api).*/, (req, res) => {
 // ─────────────────────────────────────────────
 
 app.use((err, req, res, _next) => {
-
   console.error(
     '[Server] Unhandled error:',
     err.message
@@ -181,11 +212,11 @@ app.use((err, req, res, _next) => {
       .status(statusCode)
       .json({
         success: false,
-        message
+        message,
       });
   }
 
-  res
+  return res
     .status(statusCode)
     .sendFile(
       path.join(FRONTEND_DIR, 'error.html')
@@ -197,21 +228,17 @@ app.use((err, req, res, _next) => {
 // ─────────────────────────────────────────────
 
 process.on('uncaughtException', (err) => {
-
   console.error(
     '[Server] Safeguard caught uncaughtException:',
     err.stack || err.message
   );
-
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-
+process.on('unhandledRejection', (reason) => {
   console.error(
     '[Server] Safeguard caught unhandledRejection:',
     reason
   );
-
 });
 
 // ─────────────────────────────────────────────
@@ -221,18 +248,14 @@ process.on('unhandledRejection', (reason, promise) => {
 let activeHttpServer = null;
 
 function startServer(portToUse, retries = 2) {
-
   const server = http.createServer(app);
 
   server.on('error', (err) => {
-
     if (err.code === 'EADDRINUSE') {
-
       if (retries > 0) {
-
         console.warn(
-          `[Server] Port ${portToUse} is busy. ` +
-          `Retrying in 500ms (${retries} attempts left)...`
+          '[Server] Port ' + portToUse + ' is busy. ' +
+          'Retrying in 500ms (' + retries + ' attempts left)...'
         );
 
         setTimeout(() => {
@@ -243,33 +266,27 @@ function startServer(portToUse, retries = 2) {
         }, 500);
 
       } else {
-
         const nextPort = portToUse + 1;
 
         console.warn(
-          `[Server] Port ${portToUse} is in use. ` +
-          `Attempting fallback to port ${nextPort}...`
+          '[Server] Port ' + portToUse + ' is in use. ' +
+          'Attempting fallback to port ' + nextPort + '...'
         );
 
         startServer(nextPort, 0);
       }
-
     } else {
-
       console.error(
         '[Server] Fatal server error:',
         err.message
       );
-
     }
-
   });
 
   server.listen(
     portToUse,
     '0.0.0.0',
     () => {
-
       activeHttpServer = server;
 
       console.log('');
@@ -279,7 +296,7 @@ function startServer(portToUse, retries = 2) {
       );
 
       console.log(
-        '║          TEAM PULSE — Node.js Server          ║'
+        '║          TEAM PULSE — Node.js Server         ║'
       );
 
       console.log(
@@ -287,15 +304,17 @@ function startServer(portToUse, retries = 2) {
       );
 
       console.log(
-        `║  Server  : http://localhost:${portToUse}               ║`
+        '║  Server  : http://localhost:' + portToUse + '             ║'
       );
 
       console.log(
-        `║  API     : http://localhost:${portToUse}/api           ║`
+        '║  API     : http://localhost:' + portToUse + '/api         ║'
       );
 
       console.log(
-        `║  Mode    : ${(process.env.NODE_ENV || 'development').padEnd(35)}║`
+        '║  Mode    : ' +
+        (process.env.NODE_ENV || 'development').padEnd(35) +
+        '║'
       );
 
       console.log(
@@ -306,7 +325,6 @@ function startServer(portToUse, retries = 2) {
 
       // Start scheduled cron jobs
       startCronJobs();
-
     }
   );
 }
@@ -316,33 +334,26 @@ function startServer(portToUse, retries = 2) {
 // ─────────────────────────────────────────────
 
 function handleShutdown(signal) {
-
   console.log(
-    `\n[Server] Received ${signal}. Shutting down smoothly...`
+    '\n[Server] Received ' + signal +
+    '. Shutting down smoothly...'
   );
 
   if (activeHttpServer) {
-
     activeHttpServer.close(() => {
-
       console.log(
         '[Server] HTTP connections closed.'
       );
 
       process.exit(0);
-
     });
 
     setTimeout(() => {
-
       process.exit(0);
-
     }, 1500).unref();
 
   } else {
-
     process.exit(0);
-
   }
 }
 
@@ -359,9 +370,7 @@ process.on('SIGINT', () => {
 // ─────────────────────────────────────────────
 
 async function bootstrap() {
-
   try {
-
     // Initialize database
     // Creates tables and seeds initial admin
     await initDatabase();
@@ -370,17 +379,15 @@ async function bootstrap() {
     startServer(PORT);
 
   } catch (err) {
-
     console.error(
       '[Server] Fatal startup error:',
       err.message
     );
 
     process.exit(1);
-
   }
-
 }
 
 // Start application
 bootstrap();
+```
