@@ -36,6 +36,9 @@ const reportsRoutes = require('./routes/reports');
 const notificationsRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
 
+// Migration route
+const migrationRoutes = require('./routes/migration');
+
 const app = express();
 
 let PORT = parseInt(process.env.PORT || '5000', 10);
@@ -44,8 +47,6 @@ let PORT = parseInt(process.env.PORT || '5000', 10);
 // Middleware
 // ─────────────────────────────────────────────
 
-// Render runs behind a reverse proxy.
-// Trust the first proxy so secure cookies work correctly.
 app.set('trust proxy', 1);
 
 app.use(cors({
@@ -53,7 +54,6 @@ app.use(cors({
   credentials: true,
 }));
 
-// Disable stale caching on mobile browsers
 app.use((req, res, next) => {
   res.set(
     'Cache-Control',
@@ -114,6 +114,9 @@ app.use('/api/reports', reportsRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Migration API
+app.use('/api/migration', migrationRoutes);
+
 // ─────────────────────────────────────────────
 // Serve Frontend Static Files
 // ─────────────────────────────────────────────
@@ -148,7 +151,6 @@ app.get(/^(?!\/api\/).*/, (req, res) => {
 
   const reqPath = req.path;
 
-  // Home page
   if (
     reqPath === '/' ||
     reqPath === '/index.html'
@@ -165,7 +167,6 @@ app.get(/^(?!\/api\/).*/, (req, res) => {
     );
   }
 
-  // HTML pages
   if (reqPath.endsWith('.html')) {
     const filePath = path.join(
       FRONTEND_DIR,
@@ -184,7 +185,6 @@ app.get(/^(?!\/api\/).*/, (req, res) => {
     );
   }
 
-  // Unknown frontend routes
   return res.sendFile(
     path.join(FRONTEND_DIR, 'login.html')
   );
