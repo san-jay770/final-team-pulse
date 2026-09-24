@@ -1,4 +1,4 @@
-```js
+
 /**
  * TEAM PULSE — Main Express Server
  *
@@ -390,4 +390,4 @@ async function bootstrap() {
 
 // Start application
 bootstrap();
-```
+
