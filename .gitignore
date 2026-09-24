@@ -62,3 +62,6 @@ backend/database/*.db*
 backups/*.db
 backups/*.json
 backups/*.sql
+
+uploads/
+

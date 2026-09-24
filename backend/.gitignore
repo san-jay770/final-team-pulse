@@ -3,3 +3,7 @@ team-pulse-dc8bd-firebase-adminsdk-fbsvc-b5a24d5258.json
 *.db-journal
 *.db-wal
 *.db-shm
+node_modules/
+.env
+sessions.db
+*.log
