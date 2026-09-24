@@ -48,3 +48,17 @@ app.*.map.json
 .widget_preview/
 
 *-firebase-adminsdk-*.json
+
+# Node & SQLite & Environment
+node_modules/
+backend/node_modules/
+.env
+backend/.env
+*.db
+*.db-shm
+*.db-wal
+sessions.db
+backend/database/*.db*
+backups/*.db
+backups/*.json
+backups/*.sql

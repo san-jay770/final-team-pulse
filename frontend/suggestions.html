@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suggestions - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1>Suggestions & Feedback Box</h1>
+                <p>Propose innovative ideas, process improvements, or feedback directly to Super Admins.</p>
+            </div>
+            <div class="page-header-actions">
+                <button id="openSuggModalBtn" class="btn btn-primary btn-sm">+ Propose Idea</button>
+            </div>
+        </div>
+
+        <div id="suggestionsList" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="card" style="text-align:center; color:#64748b; padding:30px;">Loading suggestions...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Propose Idea Modal -->
+<div id="suggModal" class="modal-overlay" onclick="handleSuggOverlayClick(event)">
+    <div class="modal-card" style="animation: fadeIn 0.2s ease;">
+        <div class="card-header">
+            <h3 style="margin:0; font-size:1.1rem;">Propose an Idea</h3>
+            <button onclick="closeSuggModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b; line-height:1; padding:0 4px;">&times;</button>
+        </div>
+        <form id="proposeForm">
+            <div class="form-group">
+                <label for="suggTitle" class="form-label">Subject / Idea Title</label>
+                <input type="text" id="suggTitle" class="form-control" placeholder="e.g. Automated Weekly Task Digest">
+            </div>
+            <div class="form-group">
+                <label for="suggBody" class="form-label">Details / Proposal <span style="color:#ef4444;">*</span></label>
+                <textarea id="suggBody" class="form-control" rows="4" placeholder="Explain the benefit, process, or change..." required></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; flex-wrap:wrap;">
+                <button type="button" onclick="closeSuggModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" id="submitSuggBtn" class="btn btn-primary">Submit to Super Admins</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentUser = await UI.initShell({ activeRoute: 'suggestions', pageTitle: 'Suggestions' });
+        if (!currentUser) return;
+
+        loadSuggestions();
+
+        document.getElementById('openSuggModalBtn').onclick = () => {
+            document.getElementById('suggModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        };
+
+        document.getElementById('proposeForm').onsubmit = handlePropose;
+    });
+
+    function closeSuggModal() {
+        document.getElementById('suggModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function handleSuggOverlayClick(e) {
+        if (e.target === e.currentTarget) closeSuggModal();
+    }
+
+    async function loadSuggestions() {
+        const res = await API.getSuggestions();
+        const container = document.getElementById('suggestionsList');
+
+        if (res && res.success && res.data) {
+            const list = res.data;
+            if (list.length === 0) {
+                container.innerHTML = `<div class="card" style="text-align:center; color:#64748b; padding:40px;">No suggestions submitted yet.</div>`;
+                return;
+            }
+
+            container.innerHTML = list.map(s => {
+                const canReview = currentUser && ['SUPER_ADMIN', 'ADMIN'].includes(currentUser.role);
+                const canDelete = !currentUser || ['SUPER_ADMIN', 'ADMIN'].includes(currentUser.role) || currentUser.id === s.user_id;
+
+                return `
+                    <div class="card" id="suggCard_${s.id}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-main);">${s.title || 'Suggestion'}</h3>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+                                    By <strong>${s.user_name || 'Anonymous'}</strong> &bull; ${s.team_name || ''} &bull; ${new Date(s.created_at).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="badge ${s.status === 'Approved' ? 'badge-completed' : s.status === 'Rejected' ? 'badge-overdue' : 'badge-pending'}">${s.status}</span>
+                                ${canDelete ? `
+                                    <button onclick="handleDeleteClick(event, ${s.id})" id="btnDel_${s.id}" title="Delete Suggestion" style="background:#fee2e2; color:#ef4444; border:1px solid #fecaca; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:5px; transition:all 0.2s ease;">
+                                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <span>Delete</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <p style="margin: 12px 0; color: #334155; line-height: 1.5; font-size: 0.92rem;">${s.suggestion}</p>
+
+                        ${s.response ? `
+                            <div style="background: #f8fafc; border-left: 3px solid #7c3aed; padding: 12px 16px; border-radius: 6px; margin-top: 14px;">
+                                <div style="font-size: 0.8rem; font-weight: 700; color: #6d28d9; margin-bottom: 4px;">
+                                    Admin Response (${s.reviewed_by_name || 'Admin'}):
+                                </div>
+                                <div style="font-size: 0.9rem; color: #1e293b;">${s.response}</div>
+                            </div>
+                        ` : canReview ? `
+                             <div style="margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;">
+                                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                     <input type="text" id="respInput_${s.id}" class="form-control" style="min-width:160px; flex:1;" placeholder="Admin response or feedback note...">
+                                     <button onclick="updateSuggestionStatus(${s.id}, 'Approved')" class="btn btn-sm btn-primary" style="background:#10b981; border-color:#10b981; white-space:nowrap;">✓ Approve</button>
+                                     <button onclick="updateSuggestionStatus(${s.id}, 'Rejected')" class="btn btn-sm btn-danger" style="white-space:nowrap;">✕ Reject</button>
+                                 </div>
+                             </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    async function handlePropose(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitSuggBtn');
+        submitBtn.disabled = true;
+
+        const title = document.getElementById('suggTitle').value.trim();
+        const suggestion = document.getElementById('suggBody').value.trim();
+
+        const res = await API.createSuggestion({ title, suggestion });
+        submitBtn.disabled = false;
+
+        if (res && res.success) {
+            UI.showToast('Suggestion submitted! Super Admins have been notified by email.', 'success');
+            closeSuggModal();
+            document.getElementById('proposeForm').reset();
+            loadSuggestions();
+        } else {
+            UI.showToast(res.message || 'Failed to submit suggestion.', 'danger');
+        }
+    }
+
+    async function updateSuggestionStatus(id, status) {
+        const input = document.getElementById(`respInput_${id}`);
+        const response = input ? input.value.trim() : '';
+
+        const res = await API.updateSuggestion(id, { status, response });
+        if (res && res.success) {
+            UI.showToast(`Suggestion marked as ${status}!`, 'success');
+            loadSuggestions();
+        } else {
+            UI.showToast(res.message || 'Failed to update suggestion.', 'danger');
+        }
+    }
+
+    window.handleDeleteClick = async function(e, id) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        const btn = document.getElementById(`btnDel_${id}`);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = 'Deleting...';
+        }
+
+        const card = document.getElementById(`suggCard_${id}`);
+        if (card) {
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0.3';
+        }
+
+        try {
+            const res = await API.deleteSuggestion(id);
+            if (res && res.success) {
+                UI.showToast('Suggestion deleted successfully.', 'success');
+                if (card) {
+                    card.style.transform = 'scale(0.95)';
+                    card.style.opacity = '0';
+                    setTimeout(() => {
+                        card.remove();
+                        const container = document.getElementById('suggestionsList');
+                        if (container && container.querySelectorAll('.card').length === 0) {
+                            container.innerHTML = '<div class="card" style="text-align:center; color:#64748b; padding:40px;">No suggestions submitted yet.</div>';
+                        }
+                    }, 300);
+                } else {
+                    loadSuggestions();
+                }
+            } else {
+                UI.showToast((res && res.message) || 'Failed to delete suggestion.', 'danger');
+                if (card) card.style.opacity = '1';
+                btn.disabled = false;
+                btn.innerHTML = 'Delete';
+            }
+        } catch (err) {
+            UI.showToast('Error deleting suggestion.', 'danger');
+            if (card) card.style.opacity = '1';
+            btn.disabled = false;
+            btn.innerHTML = 'Delete';
+        }
+    };
+
+    window.deleteSuggestion = window.handleDeleteClick;
+</script>
+</body>
+</html>

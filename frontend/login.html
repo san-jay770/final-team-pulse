@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Team Pulse</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+    <style>
+        body.login-body-bg {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.35) 0%, transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.3) 0%, transparent 50%),
+                        linear-gradient(135deg, #130f2c 0%, #0d0a1f 100%);
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Subtle ambient city/grid overlay */
+        body.login-body-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(19, 15, 44, 0.4) 0%, rgba(13, 10, 31, 0.8) 100%),
+                        radial-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px);
+            background-size: 100% 100%, 28px 28px;
+            pointer-events: none;
+        }
+
+        .login-split-card {
+            width: 1040px;
+            max-width: 94%;
+            min-height: 560px;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: 1.15fr 1fr;
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+            margin: 24px auto;
+        }
+
+        /* Left Column: Deep Purple Glow with Hero Brand */
+        .login-left-pane {
+            background: linear-gradient(145deg, #6d28d9 0%, #4c1d95 60%, #311068 100%);
+            padding: 48px 42px;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-left-pane::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.4) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .brand-pill-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+        }
+
+        .tp-badge-square {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+        }
+
+        .hero-statement {
+            font-size: 2.15rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #ffffff;
+            margin: 24px 0 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-desc {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e9d5ff;
+            margin-bottom: 32px;
+        }
+
+        .feature-pills-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-glass-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 50px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #ffffff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .feature-glass-pill:hover {
+            transform: translateX(4px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .feature-glass-pill span.icon {
+            font-size: 1.1rem;
+        }
+
+        .left-footer-note {
+            font-size: 0.78rem;
+            color: #c4b5fd;
+            margin-top: 32px;
+        }
+
+        /* Right Column: Clean Enterprise Sign In Form */
+        .login-right-pane {
+            padding: 54px 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .right-brand-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .right-brand-header .tp-badge-square {
+            width: 44px;
+            height: 44px;
+            font-size: 1.25rem;
+            margin-bottom: 12px;
+        }
+
+        .right-brand-header h2 {
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #1e1b4b;
+            letter-spacing: 0.5px;
+            margin: 0 0 6px;
+        }
+
+        .right-brand-header p {
+            font-size: 0.88rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .login-form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form-group label {
+            display: block;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .login-form-group input {
+            width: 100%;
+            padding: 13px 16px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            background: #ffffff;
+            color: #0f172a;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .login-form-group input:focus {
+            outline: none;
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12);
+        }
+
+        .password-input-wrap {
+            position: relative;
+        }
+
+        .password-input-wrap input {
+            padding-right: 70px;
+        }
+
+        .btn-toggle-show {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .btn-toggle-show:hover {
+            color: #7c3aed;
+        }
+
+        .btn-purple-signin {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(109, 40, 217, 0.35);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-purple-signin:hover {
+            background: linear-gradient(135deg, #6d28d9, #5b21b6);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(109, 40, 217, 0.45);
+        }
+
+        .login-right-footer {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+
+        .login-right-footer strong {
+            color: #0f172a;
+        }
+
+        /* Responsive Mobile Breakdown */
+        @media (max-width: 860px) {
+            .login-split-card {
+                grid-template-columns: 1fr;
+                border-radius: 20px;
+            }
+            .login-left-pane {
+                padding: 36px 28px;
+            }
+            .hero-statement {
+                font-size: 1.6rem;
+            }
+            .login-right-pane {
+                padding: 36px 28px;
+            }
+        }
+    </style>
+</head>
+<body class="login-body-bg">
+
+<div class="login-split-card">
+    <!-- Left Hero Brand Panel -->
+    <div class="login-left-pane">
+        <div>
+            <div class="brand-pill-logo">
+                <div class="tp-badge-square">TP</div>
+                <span>TEAM PULSE</span>
+            </div>
+
+            <h1 class="hero-statement">
+                Empowering Modern Teams with Intelligent Execution
+            </h1>
+
+            <p class="hero-desc">
+                Unified enterprise workspace for task tracking, instant doubt email alerts, feedback innovation, and automated executive daily report exports.
+            </p>
+
+            <div class="feature-pills-list">
+                <div class="feature-glass-pill">
+                    <span class="icon">⚡</span>
+                    <span>Real-time Task Execution & Priority Control</span>
+                </div>
+                <div class="feature-glass-pill">
+                    <span class="icon">❓</span>
+                    <span>Instant Doubt Email Alerts to Admins</span>
+                </div>
+                <div class="feature-glass-pill">
+                    <span class="icon">📊</span>
+                    <span>Automated Daily 6:00 PM Excel Reports</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-footer-note">
+            &copy; 2026 Team Pulse Inc. &bull; Enterprise Operations Platform
+        </div>
+    </div>
+
+    <!-- Right Enterprise Form Panel -->
+    <div class="login-right-pane">
+        <div class="right-brand-header">
+            <div class="tp-badge-square">TP</div>
+            <h2>TEAM PULSE</h2>
+            <p>Sign in to your enterprise account</p>
+        </div>
+
+        <div id="alertBox" style="display:none; margin-bottom:16px; padding:12px; border-radius:10px; font-size:0.86rem; font-weight:600;"></div>
+
+        <!-- Step 1 Form -->
+        <form id="loginForm">
+            <div class="login-form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    value="sanjaysanjayt19@gmail.com"
+                    placeholder="name@company.com" 
+                    required 
+                    autofocus
+                >
+            </div>
+
+            <div class="login-form-group">
+                <label for="password">Password</label>
+                <div class="password-input-wrap">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        value="Siva1908"
+                        placeholder="••••••••" 
+                        required
+                    >
+                    <button type="button" class="btn-toggle-show" id="togglePassBtn">Show</button>
+                </div>
+            </div>
+
+            <div class="login-form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <label for="viewModeSelect" style="margin:0; font-size:0.83rem; font-weight:700; color:#334155;">Target Dashboard View</label>
+                    <span style="font-size:0.72rem; color:#7c3aed; font-weight:700; background:#f5f3ff; padding:2px 8px; border-radius:6px;">👑 Super Admin Switcher</span>
+                </div>
+                <select id="viewModeSelect" name="view_mode" style="width:100%; padding:11px 14px; border:1.5px solid #cbd5e1; border-radius:12px; font-size:0.9rem; color:#1e293b; background:#f8fafc; font-family:inherit; cursor:pointer;">
+                    <option value="auto">⚡ Auto (Default based on Account Role)</option>
+                    <option value="super_admin">👑 Super Admin Dashboard (Full System Overview)</option>
+                    <option value="admin">🛡️ Team Admin Dashboard (Admin Operations View)</option>
+                </select>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-purple-signin">
+                Sign In &rarr;
+            </button>
+        </form>
+
+        <!-- Step 2: Multi-Team Workspace Selection (if needed) -->
+        <div id="teamSelectContainer" style="display:none; margin-top: 14px;">
+            <div style="margin-bottom: 14px; padding: 12px 14px; background: #f5f3ff; border-radius: 10px; border: 1px solid #ddd6fe;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size: 0.85rem; color: #6d28d9; font-weight: 700;">Account Identified</div>
+                    <span id="superAdminBadge" style="display:none; background:#7c3aed; color:#fff; font-size:0.68rem; font-weight:800; padding:2px 6px; border-radius:4px;">SUPER ADMIN</span>
+                </div>
+                <div style="font-size: 0.82rem; color: #7c3aed; margin-top:2px;" id="workspaceAccountEmail"></div>
+            </div>
+
+            <!-- Super Admin Quick Direct Switcher Cards -->
+            <div id="superAdminViewCards" style="display:none; margin-bottom:14px;">
+                <label style="font-weight: 700; margin-bottom: 8px; font-size: 0.85rem; color: #0f172a; display:block;">Select Entry Mode:</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button type="button" id="btnChooseSuper" class="view-choice-btn" style="text-align:left; padding:12px 14px; border:2px solid #7c3aed; border-radius:12px; background:#f5f3ff; cursor:pointer; transition:all 0.2s ease;">
+                        <div style="font-size:1.1rem; margin-bottom:4px;">👑</div>
+                        <div style="font-weight:800; font-size:0.86rem; color:#4c1d95;">Super Admin View</div>
+                        <div style="font-size:0.72rem; color:#6d28d9; margin-top:2px;">All Teams & System Oversight</div>
+                    </button>
+                    <button type="button" id="btnChooseAdmin" class="view-choice-btn" style="text-align:left; padding:12px 14px; border:2px solid #cbd5e1; border-radius:12px; background:#ffffff; cursor:pointer; transition:all 0.2s ease;">
+                        <div style="font-size:1.1rem; margin-bottom:4px;">🛡️</div>
+                        <div style="font-weight:800; font-size:0.86rem; color:#1e293b;">Team Admin View</div>
+                        <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">Direct Team Tasks & Actions</div>
+                    </button>
+                </div>
+            </div>
+
+            <form id="teamSelectForm">
+                <div class="login-form-group">
+                    <label style="font-weight: 700; margin-bottom: 8px; font-size: 0.88rem; color: #0f172a;">Or Choose Specific Workspace:</label>
+                    <div id="teamOptionsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+
+                <button type="submit" id="teamSubmitBtn" class="btn-purple-signin" style="margin-top: 10px;">
+                    Enter Workspace &rarr;
+                </button>
+
+                <div style="text-align: center; margin-top: 14px;">
+                    <a href="#" id="backToLoginLink" style="font-size: 0.82rem; color: #64748b; text-decoration: none;">&larr; Sign in with a different email</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="login-right-footer">
+            Default Super Admin: <strong>sanjaysanjayt19@gmail.com</strong>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js?v=2.0"></script>
+<script>
+    const loginForm = document.getElementById('loginForm');
+    const teamSelectContainer = document.getElementById('teamSelectContainer');
+    const teamOptionsList = document.getElementById('teamOptionsList');
+    const teamSelectForm = document.getElementById('teamSelectForm');
+    const alertBox = document.getElementById('alertBox');
+    const togglePassBtn = document.getElementById('togglePassBtn');
+    const passInput = document.getElementById('password');
+    const emailInput = document.getElementById('email');
+
+    // Toggle password visibility
+    togglePassBtn.onclick = () => {
+        const isPass = passInput.type === 'password';
+        passInput.type = isPass ? 'text' : 'password';
+        togglePassBtn.textContent = isPass ? 'Hide' : 'Show';
+    };
+
+    function showAlert(msg, type = 'danger') {
+        alertBox.style.display = 'block';
+        if (type === 'danger') {
+            alertBox.style.background = '#fee2e2';
+            alertBox.style.color = '#991b1b';
+            alertBox.style.border = '1px solid #fecaca';
+        } else {
+            alertBox.style.background = '#fef3c7';
+            alertBox.style.color = '#92400e';
+            alertBox.style.border = '1px solid #fde68a';
+        }
+        alertBox.textContent = msg;
+    }
+
+    // Submit handler
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Signing In...';
+        alertBox.style.display = 'none';
+
+        const email = emailInput.value.trim();
+        const password = passInput.value;
+        const viewMode = document.getElementById('viewModeSelect') ? document.getElementById('viewModeSelect').value : 'auto';
+
+        try {
+            const res = await API.login(email, password, null, viewMode);
+
+            if (!res.success) {
+                showAlert(res.message || 'Login failed. Check your email and password.', 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Sign In &rarr;';
+                return;
+            }
+
+            if (res.requires_team_selection || res.requireTeamSelection) {
+                loginForm.style.display = 'none';
+                teamSelectContainer.style.display = 'block';
+                const displayName = (res.user && res.user.name) || email;
+                const displayEmail = (res.user && res.user.email) || email;
+                document.getElementById('workspaceAccountEmail').textContent = `Account: ${displayName} (${displayEmail})`;
+
+                const isSuper = res.is_super_admin || (res.teams && res.teams.some(t => t.role === 'SUPER_ADMIN'));
+                const superAdminCards = document.getElementById('superAdminViewCards');
+                const superAdminBadge = document.getElementById('superAdminBadge');
+
+                if (isSuper) {
+                    if (superAdminCards) superAdminCards.style.display = 'block';
+                    if (superAdminBadge) superAdminBadge.style.display = 'inline-block';
+
+                    document.getElementById('btnChooseSuper').onclick = async () => {
+                        const targetTeam = res.teams.find(t => t.role === 'SUPER_ADMIN') || res.teams[0];
+                        const r = await API.login(email, password, targetTeam ? targetTeam.team_id : null, 'super_admin');
+                        window.location.href = r.redirect || '/dashboard_super.html';
+                    };
+
+                    document.getElementById('btnChooseAdmin').onclick = async () => {
+                        const targetTeam = res.teams[0];
+                        const r = await API.login(email, password, targetTeam ? targetTeam.team_id : null, 'admin');
+                        window.location.href = r.redirect || '/dashboard_admin.html';
+                    };
+                } else {
+                    if (superAdminCards) superAdminCards.style.display = 'none';
+                    if (superAdminBadge) superAdminBadge.style.display = 'none';
+                }
+
+                // For Super Admin: show all system teams; for others: show own teams only
+                const allSystemTeams = (isSuper && res.all_teams && res.all_teams.length > 0) ? res.all_teams : null;
+
+                if (allSystemTeams) {
+                    // Build Super Admin "All System Teams" list
+                    teamOptionsList.innerHTML = `
+                        <div style="margin-bottom:10px; padding:8px 12px; background:linear-gradient(90deg,#f5f3ff,#ede9fe); border-radius:8px; border:1px solid #ddd6fe; display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.8rem;">👑</span>
+                            <span style="font-size:0.78rem; font-weight:800; color:#4c1d95;">All System Teams — Super Admin Access</span>
+                        </div>
+                        ${allSystemTeams.map((t, i) => {
+                            return `
+                            <label onmouseenter="this.style.borderColor='#7c3aed'; this.style.background='#faf5ff';"
+                                   onmouseleave="this.style.borderColor= this.querySelector('input').checked ? '#7c3aed' : '#e2e8f0'; this.style.background='#ffffff';"
+                                   style="display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border:2px solid ${i === 0 ? '#7c3aed' : '#e2e8f0'}; border-radius:12px; cursor:pointer; background:#ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.02); transition:all 0.18s ease;">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <input type="radio" name="team_id" value="${t.team_id}" ${i === 0 ? 'checked' : ''}
+                                           style="accent-color:#7c3aed; width:18px; height:18px;"
+                                           onchange="document.querySelectorAll('#teamOptionsList label').forEach(l => { l.style.borderColor=l.querySelector('input').checked?'#7c3aed':'#e2e8f0'; l.style.background=l.querySelector('input').checked?'#faf5ff':'#ffffff'; });">
+                                    <div>
+                                        <div style="font-weight:700; color:#0f172a; font-size:0.92rem;">${t.team_name}</div>
+                                        <div style="font-size:0.76rem; color:#7c3aed; margin-top:2px; font-weight:600;">Enter as Super Admin</div>
+                                    </div>
+                                </div>
+                                <span style="background:#f3e8ff; color:#6d28d9; border:1px solid #ddd6fe; font-size:0.7rem; font-weight:800; padding:3px 8px; border-radius:6px; white-space:nowrap;">SUPER ADMIN</span>
+                            </label>`;
+                        }).join('')}
+                    `;
+                } else {
+                    // Regular user: show own teams
+                    teamOptionsList.innerHTML = res.teams.map((t, i) => {
+                        const isTeamSuper = t.role === 'SUPER_ADMIN';
+                        const roleBadge = isTeamSuper
+                            ? `<span style="background:#f3e8ff; color:#6d28d9; border:1px solid #ddd6fe; font-size:0.72rem; font-weight:800; padding:3px 8px; border-radius:6px;">SUPER ADMIN</span>`
+                            : `<span style="background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; font-size:0.72rem; font-weight:700; padding:3px 8px; border-radius:6px;">${t.role.replace('_', ' ')}</span>`;
+                        return `
+                        <label style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border:2px solid ${i === 0 ? '#7c3aed' : '#e2e8f0'}; border-radius:12px; cursor:pointer; background:#ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <input type="radio" name="team_id" value="${t.team_id}" ${i === 0 ? 'checked' : ''} style="accent-color:#7c3aed; width:18px; height:18px;">
+                                <div>
+                                    <div style="font-weight:700; color:#0f172a; font-size:0.95rem;">${t.team_name}</div>
+                                    <div style="font-size:0.78rem; color:#64748b; margin-top:2px;">Role: ${t.role.replace('_', ' ')}</div>
+                                </div>
+                            </div>
+                            ${roleBadge}
+                        </label>`;
+                    }).join('');
+                }
+                return;
+            }
+
+            // Redirect based on role
+            window.location.href = res.redirect || (viewMode === 'admin' ? '/dashboard_admin.html' : '/dashboard_super.html');
+        } catch (err) {
+            showAlert('Server connection error. Please try again.', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Sign In &rarr;';
+        }
+    });
+
+    document.getElementById('backToLoginLink').onclick = (e) => {
+        e.preventDefault();
+        teamSelectContainer.style.display = 'none';
+        loginForm.style.display = 'block';
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerHTML = 'Sign In &rarr;';
+    };
+
+    teamSelectForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const selected = document.querySelector('input[name="team_id"]:checked');
+        if (!selected) return;
+
+        const teamSubmitBtn = document.getElementById('teamSubmitBtn');
+        teamSubmitBtn.disabled = true;
+        teamSubmitBtn.innerHTML = 'Entering Workspace...';
+
+        const viewMode = document.getElementById('viewModeSelect') ? document.getElementById('viewModeSelect').value : 'auto';
+        const res = await API.login(emailInput.value.trim(), passInput.value, selected.value, viewMode);
+        if (res.success) {
+            window.location.href = res.redirect || '/dashboard_super.html';
+        } else {
+            showAlert(res.message || 'Failed to enter workspace', 'danger');
+            teamSubmitBtn.disabled = false;
+            teamSubmitBtn.innerHTML = 'Enter Workspace &rarr;';
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doubts - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+    <style>
+        .filter-controls-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .f-input {
+            padding: 9px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            font-family: inherit;
+            color: #1e293b;
+            min-width: 240px;
+            flex: 1;
+        }
+
+        .f-select {
+            padding: 9px 14px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.86rem;
+            font-family: inherit;
+            color: #1e293b;
+            background: #ffffff;
+            min-width: 140px;
+        }
+
+        .f-badge-count {
+            background: #eff6ff;
+            color: #1d4ed8;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            margin-left: auto;
+        }
+
+        .doubt-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 20px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            position: relative;
+        }
+
+        .doubt-card:hover {
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+
+        .doubt-card.open {
+            border-left: 5px solid #f59e0b;
+        }
+
+        .doubt-card.resolved {
+            border-left: 5px solid #10b981;
+        }
+
+        .doubt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .doubt-title {
+            margin: 0 0 6px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.2px;
+        }
+
+        .doubt-meta {
+            font-size: 0.8rem;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .doubt-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-delete-doubt {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.18s ease;
+        }
+
+        .btn-delete-doubt:hover {
+            background: #ef4444;
+            color: #ffffff;
+            border-color: #ef4444;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+        }
+
+        .doubt-question {
+            color: #334155;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            margin: 0 0 16px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .answer-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-left: 4px solid #10b981;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-top: 14px;
+        }
+
+        .answer-box-header {
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: #166534;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .answer-box-content {
+            font-size: 0.9rem;
+            color: #14532d;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .resolve-box {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive Overrides for Mobile & Tablet */
+        @media (max-width: 767px) {
+            .filter-controls-card {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 12px;
+            }
+            .f-input, .f-select, .f-badge-count {
+                width: 100% !important;
+                min-width: 100% !important;
+                margin-left: 0 !important;
+                text-align: center;
+            }
+            .doubt-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .doubt-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .resolve-box {
+                flex-direction: column;
+            }
+            .resolve-box .form-control,
+            .resolve-box .btn {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1>Doubt Clearing Desk</h1>
+                <p>Submit questions, get guidance from team leads, and resolve blockers with instant email notifications.</p>
+            </div>
+            <div class="page-header-actions">
+                <button id="openDoubtModalBtn" class="btn btn-primary btn-sm">+ Ask Question</button>
+            </div>
+        </div>
+
+        <!-- Filter Controls Bar -->
+        <div class="filter-controls-card">
+            <input type="text" id="doubtSearchInput" class="f-input" placeholder="Search by question, title, or submitter...">
+            <select id="doubtStatusFilter" class="f-select">
+                <option value="">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+            <div class="f-badge-count" id="doubtCountBadge">0 Doubts</div>
+        </div>
+
+        <!-- Doubts List Container -->
+        <div id="doubtsList" style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="card" style="text-align:center; color:#64748b; padding:40px;">Loading doubts...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ask Doubt Modal -->
+<div id="doubtModal" class="modal-overlay" onclick="handleDoubtOverlayClick(event)">
+    <div class="modal-card" style="animation: fadeIn 0.2s ease; max-width: 600px;">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:14px; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:1.15rem; font-weight:800; color:#0f172a;">Ask a Doubt</h3>
+            <button onclick="closeDoubtModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#64748b; line-height:1; padding:0 4px;">&times;</button>
+        </div>
+        <form id="askDoubtForm">
+            <div class="form-group" style="margin-bottom:16px;">
+                <label for="doubtTitle" class="form-label">Subject / Title</label>
+                <input type="text" id="doubtTitle" class="form-control" placeholder="e.g. Question about API auth header">
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+                <label for="doubtQuestion" class="form-label">Details / Question <span style="color:#ef4444;">*</span></label>
+                <textarea id="doubtQuestion" class="form-control" rows="5" placeholder="Describe what you are stuck on or need help with..." required></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" onclick="closeDoubtModal()" class="btn btn-secondary">Cancel</button>
+                <button type="submit" id="submitDoubtBtn" class="btn btn-primary">Submit Doubt</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let currentUser = null;
+    let allDoubts = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentUser = await UI.initShell({ activeRoute: 'doubts', pageTitle: 'Doubts' });
+        if (!currentUser) return;
+
+        loadDoubts();
+
+        document.getElementById('openDoubtModalBtn').onclick = () => {
+            document.getElementById('doubtModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('doubtTitle').focus(), 100);
+        };
+
+        document.getElementById('askDoubtForm').onsubmit = handleAskDoubt;
+
+        // Search & Filter event listeners
+        document.getElementById('doubtSearchInput').addEventListener('input', renderDoubts);
+        document.getElementById('doubtStatusFilter').addEventListener('change', renderDoubts);
+    });
+
+    function closeDoubtModal() {
+        document.getElementById('doubtModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    function handleDoubtOverlayClick(e) {
+        if (e.target === e.currentTarget) closeDoubtModal();
+    }
+
+    async function loadDoubts() {
+        const container = document.getElementById('doubtsList');
+        try {
+            const res = await API.getDoubts();
+            if (res && res.success && res.data) {
+                allDoubts = res.data;
+                renderDoubts();
+            } else {
+                container.innerHTML = `<div class="card" style="text-align:center; color:#dc2626; padding:40px;">Failed to load doubts.</div>`;
+            }
+        } catch (err) {
+            console.error(err);
+            container.innerHTML = `<div class="card" style="text-align:center; color:#dc2626; padding:40px;">Error loading doubts.</div>`;
+        }
+    }
+
+    function renderDoubts() {
+        const container = document.getElementById('doubtsList');
+        const countBadge = document.getElementById('doubtCountBadge');
+        const q = (document.getElementById('doubtSearchInput').value || '').trim().toLowerCase();
+        const statusFilter = document.getElementById('doubtStatusFilter').value;
+
+        let filtered = allDoubts.filter(d => {
+            if (statusFilter && d.status !== statusFilter) return false;
+            if (q) {
+                const matchTitle = (d.title || '').toLowerCase().includes(q);
+                const matchQuestion = (d.question || '').toLowerCase().includes(q);
+                const matchUser = (d.user_name || '').toLowerCase().includes(q);
+                const matchTeam = (d.team_name || '').toLowerCase().includes(q);
+                if (!matchTitle && !matchQuestion && !matchUser && !matchTeam) return false;
+            }
+            return true;
+        });
+
+        countBadge.textContent = `${filtered.length} Doubt${filtered.length === 1 ? '' : 's'}`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="card" style="text-align:center; color:#64748b; padding:50px 20px;">
+                    <div style="font-size:2rem; margin-bottom:10px;">💬</div>
+                    <div style="font-weight:700; font-size:1rem; color:#1e293b; margin-bottom:4px;">No doubts found</div>
+                    <div style="font-size:0.85rem;">Try adjusting your filter or ask a new question above.</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filtered.map(d => {
+            const isResolved = d.status === 'Resolved';
+            const canAnswer = ['SUPER_ADMIN', 'ADMIN'].includes(currentUser.role);
+            
+            // Delete permission: Super Admin, Admin, or the member who posted it
+            const canDelete = currentUser.role === 'SUPER_ADMIN' ||
+                              (currentUser.role === 'ADMIN') ||
+                              currentUser.id === d.user_id;
+
+            return `
+                <div class="doubt-card ${isResolved ? 'resolved' : 'open'}" id="doubtCard_${d.id}">
+                    <div class="doubt-header">
+                        <div>
+                            <h3 class="doubt-title">${escapeHtml(d.title || 'Question')}</h3>
+                            <div class="doubt-meta">
+                                <span>Asked by <strong style="color:#0f172a;">${escapeHtml(d.user_name || 'Member')}</strong></span>
+                                ${d.team_name ? `<span>&bull; <span class="badge" style="background:#f1f5f9; color:#475569;">${escapeHtml(d.team_name)}</span></span>` : ''}
+                                <span>&bull; ${formatDate(d.created_at)}</span>
+                            </div>
+                        </div>
+
+                        <div class="doubt-actions">
+                            <span class="badge ${isResolved ? 'badge-completed' : 'badge-pending'}">${d.status}</span>
+                            ${canDelete ? `
+                                <button onclick="deleteDoubt(${d.id})" class="btn-delete-doubt" title="Delete this doubt">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                    Delete
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <p class="doubt-question">${escapeHtml(d.question)}</p>
+
+                    ${d.answer ? `
+                        <div class="answer-box">
+                            <div class="answer-box-header">
+                                <span>✓ Resolution</span> &bull; <span>${escapeHtml(d.answered_by_name || 'Team Lead')}</span>
+                            </div>
+                            <div class="answer-box-content">${escapeHtml(d.answer)}</div>
+                        </div>
+                    ` : canAnswer ? `
+                        <div class="resolve-box">
+                            <input type="text" id="ansInput_${d.id}" class="form-control" style="min-width:240px; flex:1;" placeholder="Type resolution or advice...">
+                            <button onclick="resolveDoubt(${d.id})" class="btn btn-sm btn-primary" style="white-space: nowrap; font-weight:700;">
+                                ✓ Resolve & Notify
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function handleAskDoubt(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('submitDoubtBtn');
+        const title = document.getElementById('doubtTitle').value.trim();
+        const question = document.getElementById('doubtQuestion').value.trim();
+
+        if (!question) {
+            UI.showToast('Please enter the question details.', 'warning');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        try {
+            const res = await API.createDoubt({ title, question });
+            if (res && res.success) {
+                UI.showToast('Doubt submitted! Your admin has been notified by email.', 'success');
+                closeDoubtModal();
+                document.getElementById('askDoubtForm').reset();
+                await loadDoubts();
+            } else {
+                UI.showToast((res && res.message) || 'Failed to submit doubt.', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            UI.showToast('Error submitting doubt.', 'danger');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Doubt';
+        }
+    }
+
+    async function resolveDoubt(id) {
+        const input = document.getElementById(`ansInput_${id}`);
+        if (!input) return;
+        const answer = input.value.trim();
+        if (!answer) {
+            UI.showToast('Please type an answer first.', 'warning');
+            input.focus();
+            return;
+        }
+
+        try {
+            const res = await API.updateDoubt(id, { answer, status: 'Resolved' });
+            if (res && res.success) {
+                UI.showToast('Doubt resolved and member notified by email!', 'success');
+                await loadDoubts();
+            } else {
+                UI.showToast((res && res.message) || 'Failed to resolve doubt.', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            UI.showToast('Error resolving doubt.', 'danger');
+        }
+    }
+
+    async function deleteDoubt(id) {
+        if (!confirm('Are you sure you want to delete this doubt? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const res = await API.deleteDoubt(id);
+            if (res && res.success) {
+                UI.showToast('Doubt deleted successfully.', 'success');
+                allDoubts = allDoubts.filter(d => d.id !== id);
+                renderDoubts();
+            } else {
+                UI.showToast((res && res.message) || 'Failed to delete doubt.', 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            UI.showToast('Error deleting doubt.', 'danger');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function formatDate(isoStr) {
+        if (!isoStr) return '';
+        const d = new Date(isoStr);
+        return d.toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+</script>
+</body>
+</html>

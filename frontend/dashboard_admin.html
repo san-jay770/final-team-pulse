@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Admin Dashboard - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        @media (max-width: 767px) {
+            #superAdminBanner > div {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            #superAdminBanner > div > div:last-child {
+                flex-direction: column !important;
+                width: 100% !important;
+            }
+            #superAdminBanner a,
+            #superAdminBanner select {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <!-- Super Admin Inspection Banner (Shown only for SUPER_ADMIN) -->
+        <div id="superAdminBanner" style="display:none; background: linear-gradient(135deg, #3b0764 0%, #581c87 100%); color: #ffffff; border-radius: 14px; padding: 14px 20px; margin-bottom: 20px; border: 1.5px solid #a855f7; box-shadow: 0 4px 18px rgba(88, 28, 135, 0.25);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; background: #7c3aed; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">👑</div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.95rem; letter-spacing: 0.3px;">Super Admin Inspection Mode — Team Admin Page</div>
+                        <div style="font-size: 0.8rem; color: #e9d5ff;">Viewing operational Team Admin Dashboard. Switch teams below to inspect any team's live tasks and members.</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.78rem; font-weight: 700; color: #d8b4fe;">Inspecting Team:</span>
+                        <select id="superAdminTeamSelect" style="padding: 6px 12px; border-radius: 8px; border: 1.5px solid #a855f7; background: #ffffff; color: #0f172a; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                            <option value="">All / Current Team</option>
+                        </select>
+                    </div>
+                    <a href="/dashboard_super.html" class="btn btn-sm" style="background: #ffffff; color: #581c87; font-weight: 800; border: none; padding: 7px 14px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
+                        👑 Return to Super Admin &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Predicted Daily Task Warning System Top Banner -->
+        <div class="warning-banner-ist">
+            <div class="wb-left">
+                <div class="wb-alarm-icon">⏰</div>
+                <div>
+                    <div class="wb-title">
+                        Predicted Daily Task Warning System <span class="wb-tag-ist">IN INDIAN TIME (IST)</span>
+                    </div>
+                    <div class="wb-sub">
+                        Next Predicted Warning: <strong>05:45 PM IST</strong> (Repeats every 5 mins loop for pending daily tasks & reports)
+                    </div>
+                </div>
+            </div>
+            <div class="wb-right">
+                <a href="/user_form.html" class="wb-btn-add">+ Add Member</a>
+                <div class="wb-gsm-status">
+                    <span class="wb-green-dot"></span> GSM SMS + Mail Active
+                </div>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 id="welcomeHeading">Team Dashboard</h1>
+                <p id="dashboardSubHeading">Monitor team tasks, assign work, and clear member doubts.</p>
+            </div>
+            <div class="page-header-actions" id="headerActions">
+                <a href="/user_form.html" class="btn btn-secondary btn-sm">+ Add Member</a>
+                <a href="/task_form.html" class="btn btn-primary btn-sm">+ Assign Task</a>
+                <a href="/tasks.html" class="btn btn-secondary btn-sm">All Tasks</a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><div class="stat-header"><span class="stat-title">Team Tasks</span></div><div class="stat-value" id="statTasks">...</div><div class="stat-subtitle">Total assigned</div></div>
+            <div class="stat-card stat-orange"><div class="stat-header"><span class="stat-title">Pending</span></div><div class="stat-value" id="statPending">...</div><div class="stat-subtitle">In progress</div></div>
+            <div class="stat-card stat-green"><div class="stat-header"><span class="stat-title">Completed</span></div><div class="stat-value" id="statCompleted">...</div><div class="stat-subtitle">Done</div></div>
+            <div class="stat-card stat-purple"><div class="stat-header"><span class="stat-title">Team Members</span></div><div class="stat-value" id="statMembers">...</div><div class="stat-subtitle">Active</div></div>
+        </div>
+
+        <!-- Team Tasks Table -->
+        <div class="card" style="margin-top:24px;">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h2 class="card-title" style="margin:0;">Recent Team Tasks</h2>
+                <a href="/tasks.html" class="btn btn-secondary btn-sm">View All &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Task Title</th>
+                            <th>Assigned To</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTable">
+                        <tr><td colspan="5" style="text-align:center; padding:20px; color:#64748b;">Loading tasks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = await UI.initShell({ activeRoute: 'dashboard_admin', allowedRoles: ['ADMIN', 'SUPER_ADMIN'], pageTitle: 'Team Admin Overview' });
+        if (!user) return;
+
+        const isSuper = user.role === 'SUPER_ADMIN';
+        document.getElementById('welcomeHeading').textContent = `Welcome, ${user.name}! ${isSuper ? '(Super Admin)' : ''}`;
+
+        if (isSuper) {
+            const superBanner = document.getElementById('superAdminBanner');
+            if (superBanner) superBanner.style.display = 'block';
+
+            // Add Super Admin switch button to header actions
+            const actions = document.getElementById('headerActions');
+            if (actions) {
+                const superBtn = document.createElement('a');
+                superBtn.href = '/dashboard_super.html';
+                superBtn.className = 'btn btn-secondary btn-sm';
+                superBtn.style.background = '#f5f3ff';
+                superBtn.style.color = '#6d28d9';
+                superBtn.style.fontWeight = '700';
+                superBtn.style.borderColor = '#ddd6fe';
+                superBtn.innerHTML = '👑 Super Admin View';
+                actions.prepend(superBtn);
+            }
+
+            // Populate team selector for Super Admin
+            const teamSelect = document.getElementById('superAdminTeamSelect');
+            try {
+                const teamsRes = await API.getTeams();
+                if (teamsRes && teamsRes.success && teamsRes.data) {
+                    teamSelect.innerHTML = `<option value="">All Teams (Global Scope)</option>` + 
+                        teamsRes.data.map(t => `<option value="${t.id}" ${t.id === user.team_id ? 'selected' : ''}>${t.name}</option>`).join('');
+                }
+            } catch (e) {
+                console.warn('Could not load teams list:', e);
+            }
+
+            teamSelect.addEventListener('change', () => {
+                loadDashboardData(teamSelect.value ? parseInt(teamSelect.value, 10) : null);
+            });
+        }
+
+        async function loadDashboardData(targetTeamId = null) {
+            const effectiveTeam = targetTeamId !== null ? targetTeamId : user.team_id;
+
+            const [tasksRes, usersRes] = await Promise.all([
+                API.getTasks({ limit: 10, ...(effectiveTeam ? { team_id: effectiveTeam } : {}) }),
+                API.getUsers({ ...(effectiveTeam ? { team_id: effectiveTeam } : {}) })
+            ]);
+
+            if (tasksRes && tasksRes.success) {
+                const tasks = tasksRes.data || [];
+                const total = tasksRes.pagination ? tasksRes.pagination.total : tasks.length;
+                const completed = tasks.filter(t => ['Completed', 'COMPLETED'].includes(t.status)).length;
+                const pending = tasks.filter(t => !['Completed', 'COMPLETED'].includes(t.status)).length;
+
+                document.getElementById('statTasks').textContent = total;
+                document.getElementById('statCompleted').textContent = completed;
+                document.getElementById('statPending').textContent = pending;
+
+                const tbody = document.getElementById('tasksTable');
+                if (tasks.length > 0) {
+                    tbody.innerHTML = tasks.map(t => `
+                        <tr>
+                            <td><a href="#" onclick="UI.showTaskModal(${t.id}); return false;" style="font-weight:700; color:var(--primary);">${t.title}</a></td>
+                            <td>${t.assigned_user_name || '<em style="color:#94a3b8;">Unassigned</em>'}</td>
+                            <td><span class="priority-badge priority-${(t.priority || 'medium').toLowerCase()}">${t.priority}</span></td>
+                            <td><span class="badge badge-${(t.status || 'pending').toLowerCase()}">${t.status}</span></td>
+                            <td>${t.due_date ? new Date(t.due_date).toLocaleDateString() : '-'}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#64748b; padding:20px;">No tasks assigned yet.</td></tr>`;
+                }
+            }
+
+            if (usersRes && usersRes.success) {
+                const members = (usersRes.data || []).filter(u => u.role === 'TEAM_MEMBER');
+                document.getElementById('statMembers').textContent = members.length;
+            }
+        }
+
+        loadDashboardData(isSuper && user.team_id ? user.team_id : null);
+    });
+</script>
+</body>
+</html>

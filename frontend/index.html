@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Pulse — Team Task Execution & Performance System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=2.0">
+
+    <style>
+        body {
+            background-color: #f1f8f5;
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            color: #0f172a;
+            margin: 0;
+            padding: 0;
+        }
+
+        .landing-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 48px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .landing-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+        }
+
+        .tp-badge-green {
+            width: 38px;
+            height: 38px;
+            background: #059669;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .nav-right-btns {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-signin-nav {
+            background: #ffffff;
+            color: #0f172a;
+            border: 1px solid #e2e8f0;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+
+        .btn-getstarted-nav {
+            background: #059669;
+            color: #ffffff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+        }
+
+        /* Hero Forest Card */
+        .landing-container {
+            max-width: 1240px;
+            margin: 10px auto 40px;
+            padding: 0 24px;
+        }
+
+        .nature-hero-card {
+            border-radius: 28px;
+            padding: 64px 54px;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(6, 78, 59, 0.92) 0%, rgba(4, 120, 87, 0.85) 50%, rgba(2, 44, 34, 0.95) 100%),
+                        radial-gradient(circle at top right, rgba(16, 185, 129, 0.4) 0%, transparent 60%);
+            box-shadow: 0 20px 40px -15px rgba(4, 120, 87, 0.4);
+        }
+
+        /* Ambient nature lighting overlay */
+        .nature-hero-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 75% 30%, rgba(52, 211, 153, 0.25) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .nature-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 24px;
+        }
+
+        .nature-hero-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            line-height: 1.15;
+            margin: 0 0 18px;
+            color: #ffffff;
+            max-width: 850px;
+        }
+
+        .nature-hero-desc {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: #d1fae5;
+            max-width: 750px;
+            margin: 0 0 36px;
+        }
+
+        .nature-hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-launch-white {
+            background: #ffffff;
+            color: #064e3b;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease;
+        }
+        .btn-launch-white:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-view-quick {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 14px 26px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            backdrop-filter: blur(8px);
+            transition: background 0.2s ease;
+        }
+        .btn-view-quick:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Quick Action Section */
+        .section-header {
+            margin: 40px 0 20px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 6px;
+        }
+
+        .section-sub {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        .qa-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 36px 28px;
+            text-align: center;
+            text-decoration: none;
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .qa-card:hover {
+            transform: translateY(-4px);
+            border-color: #10b981;
+            box-shadow: 0 12px 25px rgba(16, 185, 129, 0.12);
+        }
+
+        .qa-icon-wrap {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+
+        .bg-soft-green { background: #dcfce7; }
+        .bg-soft-amber { background: #fef3c7; }
+        .bg-soft-yellow { background: #fef9c3; }
+
+        .qa-card h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .qa-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        @media (max-width: 860px) {
+            .landing-nav { padding: 14px 20px; }
+            .nature-hero-card { padding: 40px 24px; border-radius: 20px; }
+            .nature-hero-title { font-size: 2rem; }
+            .quick-action-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="landing-nav">
+    <a href="/" class="landing-brand">
+        <div class="tp-badge-green">TP</div>
+        <span>TEAM PULSE</span>
+    </a>
+
+    <div class="nav-right-btns">
+        <a href="/login.html" class="btn-signin-nav">Sign In</a>
+        <a href="/login.html" class="btn-getstarted-nav">Get Started</a>
+    </div>
+</header>
+
+<main class="landing-container">
+    <!-- Nature Edition Hero Card -->
+    <div class="nature-hero-card">
+        <div class="nature-badge-pill">
+            <span>🌲</span>
+            <span>Team Pulse Nature Edition &bull; Enterprise Hub</span>
+        </div>
+
+        <h1 class="nature-hero-title">
+            Team Task Execution &amp; Performance System
+        </h1>
+
+        <p class="nature-hero-desc">
+            Unified SaaS platform for assigning tasks, resolving doubts via automated emails, capturing feedback, and tracking executive throughput.
+        </p>
+
+        <div class="nature-hero-actions">
+            <a href="/login.html" class="btn-launch-white">Launch Platform &rarr;</a>
+            <a href="#quickActions" class="btn-view-quick">View Quick Actions</a>
+        </div>
+    </div>
+
+    <!-- Quick Action Boxes Section -->
+    <section class="section-header" id="quickActions">
+        <h2 class="section-title">
+            <span style="color:#f59e0b;">⚡</span> Quick Action Boxes
+        </h2>
+        <p class="section-sub">Direct shortcuts to core business modules.</p>
+
+        <div class="quick-action-grid">
+            <a href="/login.html" class="qa-card">
+                <div class="qa-icon-wrap bg-soft-green">📋</div>
+                <h3>Tasks &amp; Deliverables</h3>
+                <p>Track deadlines, submit completion proof &amp; view team assignments.</p>
+            </a>
+
+            <a href="/login.html" class="qa-card">
+                <div class="qa-icon-wrap bg-soft-amber">❓</div>
+                <h3>Doubts &amp; Support</h3>
+                <p>Instant query dispatch with automated lead email alerts.</p>
+            </a>
+
+            <a href="/login.html" class="qa-card">
+                <div class="qa-icon-wrap bg-soft-yellow">💡</div>
+                <h3>Feedback &amp; Ideas</h3>
+                <p>Share innovative workflow suggestions with executive management.</p>
+            </a>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Form - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 id="formHeading">Add New User</h1>
+                <p>Assign members to teams, grant roles, and send welcome emails with login credentials.</p>
+            </div>
+            <div class="page-header-actions">
+                <a href="/users.html" class="btn btn-secondary btn-sm">&larr; Back to Users</a>
+            </div>
+        </div>
+
+        <div class="card" style="max-width: 650px; margin: 0 auto;">
+            <!-- Live Existing User Banner -->
+            <div id="existingUserBanner" style="display:none; margin-bottom: 20px; padding: 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                <div style="font-weight: 700; color: #1e40af; font-size: 0.9rem;">Existing User Account Detected</div>
+                <div style="font-size: 0.82rem; color: #3b82f6; margin-top: 2px;">
+                    User: <strong id="foundUserName"></strong> | Workspaces: <span id="foundUserTeams"></span>
+                </div>
+            </div>
+
+            <form id="userForm">
+                <input type="hidden" id="userId" value="">
+
+                <div class="form-group">
+                    <label for="userEmail" class="form-label">Email Address <span style="color:#ef4444;">*</span></label>
+                    <input type="email" id="userEmail" class="form-control" placeholder="user@company.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userName" class="form-label">Full Name <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="userName" class="form-control" placeholder="Jane Doe" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="userPhone" class="form-label">Contact / Mobile (Cellular SMS)</label>
+                    <input type="tel" id="userPhone" class="form-control" placeholder="+919876543210 or 9345703250">
+                    <small style="font-size:0.75rem; color:#64748b;">Used for GSM Cellular task alerts & warnings</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="userPassword" class="form-label">
+                        Password <span id="passwordRequiredNote" style="font-size:0.78rem; color:#64748b;">(Required for new users)</span>
+                    </label>
+                    <input type="password" id="userPassword" class="form-control" placeholder="••••••••">
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label for="userRole" class="form-label">Role</label>
+                        <select id="userRole" class="form-control">
+                            <option value="TEAM_MEMBER">Team Member</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="SUPER_ADMIN" id="superAdminOption">Super Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userTeam" class="form-label">Team Assignment</label>
+                        <select id="userTeam" class="form-control">
+                            <option value="">-- Select Team --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="userStatus" class="form-label">Account Status</label>
+                    <select id="userStatus" class="form-control">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                    <div>
+                        <button type="button" id="deleteUserBtn" class="btn btn-danger" style="display:none; background:#ef4444; color:#ffffff; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(239,68,68,0.3);">
+                            🗑️ Delete User
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <a href="/users.html" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" id="saveUserBtn" class="btn btn-primary" style="padding: 10px 24px;">Save User &rarr;</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let currentUser = null;
+    let editingUserId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentUser = await UI.initShell({ activeRoute: 'users', allowedRoles: ['SUPER_ADMIN', 'ADMIN'], pageTitle: 'User Form' });
+        if (!currentUser) return;
+
+        // Restrict Super Admin creation if caller is not Super Admin
+        if (currentUser.role !== 'SUPER_ADMIN') {
+            const opt = document.getElementById('superAdminOption');
+            if (opt) opt.remove();
+        }
+
+        await loadTeams();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        editingUserId = urlParams.get('id');
+
+        if (editingUserId) {
+            document.getElementById('formHeading').textContent = 'Edit User';
+            document.getElementById('passwordRequiredNote').textContent = '(Leave blank to keep existing password)';
+            await loadUserDetails(editingUserId);
+        } else {
+            // Live email lookup
+            initEmailCheck();
+        }
+
+        document.getElementById('userForm').addEventListener('submit', handleSaveUser);
+    });
+
+    async function loadTeams() {
+        const res = await API.getTeams();
+        const select = document.getElementById('userTeam');
+        if (res && res.success && res.data) {
+            let teams = res.data;
+            if (currentUser.role === 'ADMIN') {
+                teams = teams.filter(t => t.id === currentUser.team_id);
+            }
+            select.innerHTML = '<option value="">-- Select Team --</option>' + teams.map(t => `
+                <option value="${t.id}">${t.name}</option>
+            `).join('');
+
+            if (currentUser.role === 'ADMIN') {
+                select.value = currentUser.team_id;
+                select.disabled = true;
+            }
+        }
+    }
+
+    async function loadUserDetails(id) {
+        const res = await API.getUser(id);
+        if (res && res.success && res.data) {
+            const u = res.data;
+            document.getElementById('userId').value = u.id;
+            document.getElementById('userName').value = u.name || '';
+            document.getElementById('userEmail').value = u.email || '';
+            document.getElementById('userPhone').value = u.phone || '';
+            document.getElementById('userRole').value = u.role || 'TEAM_MEMBER';
+            document.getElementById('userTeam').value = u.team_id || '';
+            document.getElementById('userStatus').value = u.status || 'Active';
+
+            const deleteBtn = document.getElementById('deleteUserBtn');
+            if (deleteBtn) {
+                deleteBtn.style.display = 'inline-flex';
+                deleteBtn.onclick = async () => {
+                    // Instant touch spot delete without confirmation as required
+                    deleteBtn.disabled = true;
+                    deleteBtn.textContent = 'Deleting...';
+                    const delRes = await API.deleteUser(id);
+                    if (delRes && delRes.success) {
+                        UI.showToast(delRes.message || `User ${u.name} deleted successfully!`, 'success');
+                        setTimeout(() => window.location.href = '/users.html', 400);
+                    } else {
+                        UI.showToast(delRes.message || 'Failed to delete user.', 'danger');
+                        deleteBtn.disabled = false;
+                        deleteBtn.textContent = '🗑️ Delete User';
+                    }
+                };
+            }
+        }
+    }
+
+    function initEmailCheck() {
+        const emailInput = document.getElementById('userEmail');
+        const nameInput = document.getElementById('userName');
+        const banner = document.getElementById('existingUserBanner');
+        let timer = null;
+
+        emailInput.addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(async () => {
+                const val = emailInput.value.trim();
+                if (!val || !val.includes('@')) {
+                    banner.style.display = 'none';
+                    return;
+                }
+
+                const res = await API.checkUserEmail(val);
+                if (res && res.found) {
+                    banner.style.display = 'block';
+                    document.getElementById('foundUserName').textContent = res.name;
+                    document.getElementById('foundUserTeams').textContent = res.current_teams || 'None';
+                    if (!nameInput.value) nameInput.value = res.name;
+                    document.getElementById('passwordRequiredNote').textContent = '(Optional — existing credentials will be retained)';
+                } else {
+                    banner.style.display = 'none';
+                    document.getElementById('passwordRequiredNote').textContent = '(Required for new users)';
+                }
+            }, 300);
+        });
+    }
+
+    async function handleSaveUser(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('saveUserBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+
+        const name = document.getElementById('userName').value.trim();
+        const email = document.getElementById('userEmail').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const password = document.getElementById('userPassword').value;
+        const role = document.getElementById('userRole').value;
+        const team_id = document.getElementById('userTeam').value || null;
+        const status = document.getElementById('userStatus').value;
+
+        const payload = { name, email, phone: phone || undefined, password: password || undefined, role, team_id, status };
+
+        let res;
+        if (editingUserId) {
+            res = await API.updateUser(editingUserId, payload);
+        } else {
+            res = await API.createUser(payload);
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save User →';
+
+        if (res && res.success) {
+            UI.showToast(res.message || 'User saved successfully! Email sent.', 'success');
+            setTimeout(() => window.location.href = '/users.html', 800);
+        } else {
+            UI.showToast(res.message || 'Failed to save user.', 'danger');
+        }
+    }
+</script>
+</body>
+</html>

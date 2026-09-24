@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Form - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 id="formHeading">Create New Team</h1>
+                <p>Define a new department workspace and assign an administrative lead.</p>
+            </div>
+            <div class="page-header-actions">
+                <a href="/teams.html" class="btn btn-secondary btn-sm">&larr; Back to Teams</a>
+            </div>
+        </div>
+
+        <div class="card" style="max-width: 600px; margin: 0 auto;">
+            <form id="teamForm">
+                <input type="hidden" id="teamId" value="">
+
+                <div class="form-group">
+                    <label for="teamName" class="form-label">Team Name <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="teamName" class="form-control" placeholder="e.g. Frontend Engineering" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="teamDesc" class="form-label">Description</label>
+                    <textarea id="teamDesc" class="form-control" rows="3" placeholder="Primary responsibilities and goals..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="adminSelect" class="form-label">Team Lead / Admin</label>
+                    <select id="adminSelect" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <a href="/teams.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" id="saveTeamBtn" class="btn btn-primary" style="padding: 10px 24px;">Save Team &rarr;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let editingTeamId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = await UI.initShell({ activeRoute: 'teams', allowedRoles: ['SUPER_ADMIN'], pageTitle: 'Team Form' });
+        if (!user) return;
+
+        await loadAdmins();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        editingTeamId = urlParams.get('id');
+
+        if (editingTeamId) {
+            document.getElementById('formHeading').textContent = 'Edit Team';
+            await loadTeamDetails(editingTeamId);
+        }
+
+        document.getElementById('teamForm').addEventListener('submit', handleSaveTeam);
+    });
+
+    async function loadAdmins() {
+        const res = await API.getUsers();
+        const select = document.getElementById('adminSelect');
+        if (res && res.success && res.data) {
+            select.innerHTML = '<option value="">-- Unassigned --</option>' + res.data.map(u => `
+                <option value="${u.id}">${u.name} (${u.role.replace('_', ' ')})</option>
+            `).join('');
+        }
+    }
+
+    async function loadTeamDetails(id) {
+        const res = await API.getTeam(id);
+        if (res && res.success && res.data) {
+            const t = res.data;
+            document.getElementById('teamId').value = t.id;
+            document.getElementById('teamName').value = t.name || '';
+            document.getElementById('teamDesc').value = t.description || '';
+            document.getElementById('adminSelect').value = t.admin_id || '';
+        }
+    }
+
+    async function handleSaveTeam(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('saveTeamBtn');
+        submitBtn.disabled = true;
+
+        const name = document.getElementById('teamName').value.trim();
+        const description = document.getElementById('teamDesc').value.trim();
+        const admin_id = document.getElementById('adminSelect').value || null;
+
+        const payload = { name, description, admin_id };
+
+        let res;
+        if (editingTeamId) {
+            res = await API.updateTeam(editingTeamId, payload);
+        } else {
+            res = await API.createTeam(payload);
+        }
+
+        submitBtn.disabled = false;
+
+        if (res && res.success) {
+            UI.showToast(res.message || 'Team saved successfully!', 'success');
+            setTimeout(() => window.location.href = '/teams.html', 800);
+        } else {
+            UI.showToast(res.message || 'Failed to save team.', 'danger');
+        }
+    }
+</script>
+</body>
+</html>

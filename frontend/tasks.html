@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .export-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff !important;
+            font-weight: 600;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            transition: all 0.2s ease;
+        }
+        .export-btn:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        @media (max-width: 767px) {
+            .page-header-actions {
+                flex-direction: column !important;
+                width: 100% !important;
+            }
+            .page-header-actions button,
+            .page-header-actions div,
+            .page-header-actions a {
+                width: 100% !important;
+                justify-content: center !important;
+                text-align: center !important;
+            }
+            #searchInput, #statusFilter, #priorityFilter, #teamFilter, #filterBtn, #resetBtn {
+                width: 100% !important;
+                min-width: 100% !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1>Task Management</h1>
+                <p>Track, filter, update and manage task assignments with real-time Excel reporting.</p>
+            </div>
+            <div class="page-header-actions" style="display: flex; gap: 10px; align-items: center;">
+                <button id="taskExportBtn" onclick="exportTasksExcel()" class="btn btn-sm export-btn">
+                    <span>📊</span> Export to Excel (.xlsx)
+                </button>
+                <div id="taskHeaderActions">
+                    <a href="/task_form.html" class="btn btn-primary btn-sm">+ Create Task</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="card" style="margin-bottom: 20px; padding: 16px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search tasks..." style="flex: 1; min-width: 200px;">
+                
+                <select id="statusFilter" class="form-control" style="width: auto; min-width: 140px;">
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Overdue">Overdue</option>
+                </select>
+
+                <select id="priorityFilter" class="form-control" style="width: auto; min-width: 140px;">
+                    <option value="">All Priorities</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                </select>
+
+                <select id="teamFilter" class="form-control" style="width: auto; min-width: 140px; display: none;">
+                    <option value="">All Teams</option>
+                </select>
+
+                <button id="filterBtn" class="btn btn-secondary btn-sm" style="padding: 10px 16px;">Filter</button>
+                <button id="resetBtn" class="btn btn-sm" style="background:#f1f5f9; color:#475569; padding: 10px 16px;">Reset</button>
+            </div>
+        </div>
+
+        <!-- Tasks Table -->
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Task Title & Description</th>
+                            <th>Team</th>
+                            <th>Assigned To</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <tr><td colspan="7" style="text-align:center; padding:24px; color:#64748b;">Loading tasks...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let currentUser = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentUser = await UI.initShell({ activeRoute: 'tasks', pageTitle: 'Tasks' });
+        if (!currentUser) return;
+
+        // Hide Add Task if member
+        if (currentUser.role === 'TEAM_MEMBER') {
+            const headerActions = document.getElementById('taskHeaderActions');
+            if (headerActions) headerActions.style.display = 'none';
+        }
+
+        if (currentUser.role === 'SUPER_ADMIN') {
+            const teamSelect = document.getElementById('teamFilter');
+            if (teamSelect) {
+                teamSelect.style.display = 'block';
+                const teamsRes = await API.getTeams();
+                if (teamsRes && teamsRes.success && teamsRes.data) {
+                    teamsRes.data.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t.id;
+                        opt.textContent = t.name;
+                        teamSelect.appendChild(opt);
+                    });
+                }
+            }
+        }
+
+        loadTasks();
+
+        document.getElementById('filterBtn').onclick = loadTasks;
+        document.getElementById('resetBtn').onclick = () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('priorityFilter').value = '';
+            const teamSelect = document.getElementById('teamFilter');
+            if (teamSelect) teamSelect.value = '';
+            loadTasks();
+        };
+
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') loadTasks();
+        });
+    });
+
+    function getFilterParams() {
+        const q = document.getElementById('searchInput').value.trim();
+        const status = document.getElementById('statusFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        const teamSelect = document.getElementById('teamFilter');
+        const team_id = teamSelect ? teamSelect.value : '';
+
+        const params = {};
+        if (q) params.q = q;
+        if (status) params.status = status;
+        if (priority) params.priority = priority;
+        if (team_id) params.team_id = team_id;
+        return params;
+    }
+
+    async function loadTasks() {
+        const params = getFilterParams();
+        const res = await API.getTasks(params);
+        const tbody = document.getElementById('tasksTableBody');
+
+        if (res && res.success && res.data) {
+            const tasks = res.data;
+            if (tasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No tasks found matching criteria.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = tasks.map(t => {
+                const canEdit = currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && t.team_id === currentUser.team_id);
+                const isAssignedToMe = t.assigned_to === currentUser.id;
+                const isDone = ['Completed', 'COMPLETED'].includes(t.status);
+
+                return `
+                    <tr>
+                        <td style="max-width: 280px;">
+                            <a href="#" onclick="UI.showTaskModal(${t.id}); return false;" style="font-weight: 600; color: var(--primary); font-size: 0.95rem; display: inline-block;">${t.title}</a>
+                            ${t.description ? `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${t.description}</div>` : ''}
+                        </td>
+                        <td><span style="font-size: 0.85rem; color: #475569;">${t.team_name || '-'}</span></td>
+                        <td>
+                            ${t.assigned_user_name ? `
+                                <div style="font-weight: 500; font-size: 0.88rem;">${t.assigned_user_name}</div>
+                                <div style="font-size: 0.75rem; color: #94a3b8;">${t.assigned_user_email || ''}</div>
+                            ` : `<span style="color: #94a3b8; font-style: italic; font-size: 0.85rem;">Unassigned</span>`}
+                        </td>
+                        <td><span class="priority-badge priority-${(t.priority || 'medium').toLowerCase()}">${t.priority}</span></td>
+                        <td>
+                            ${canEdit || isAssignedToMe ? `
+                                <select onchange="updateTaskStatus(${t.id}, this.value)" class="form-control" style="padding: 4px 8px; font-size: 0.82rem; height: auto; width: auto; font-weight: 600;">
+                                    <option value="Pending" ${t.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="In Progress" ${t.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="Completed" ${t.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                    <option value="Overdue" ${t.status === 'Overdue' ? 'selected' : ''}>Overdue</option>
+                                </select>
+                            ` : `<span class="badge badge-${(t.status || 'pending').toLowerCase()}">${t.status}</span>`}
+                        </td>
+                        <td>${t.due_date ? new Date(t.due_date).toLocaleDateString() : '-'}</td>
+                        <td style="text-align: right; white-space: nowrap;">
+                            ${canEdit ? `
+                                <a href="/task_form.html?id=${t.id}" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 0.78rem; margin-right: 4px;">Edit</a>
+                                <button onclick="deleteTask(${t.id}, '${t.title.replace(/'/g, "\\'")}')" class="btn btn-sm" style="padding: 4px 8px; font-size: 0.78rem; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer;">Delete</button>
+                            ` : isAssignedToMe && !isDone ? `
+                                <button onclick="updateTaskStatus(${t.id}, 'Completed')" class="btn btn-sm btn-primary" style="padding: 4px 10px; font-size: 0.78rem;">Mark Done</button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    async function updateTaskStatus(id, status) {
+        const res = await API.updateTask(id, { status });
+        if (res.success) {
+            UI.showToast(`Task status updated to ${status}!`, 'success');
+            loadTasks();
+        } else {
+            UI.showToast(res.message || 'Failed to update status', 'danger');
+        }
+    }
+
+    async function deleteTask(id, title) {
+        const res = await API.deleteTask(id);
+        if (res.success) {
+            UI.showToast('Task deleted successfully.', 'success');
+            loadTasks();
+        } else {
+            UI.showToast(res.message || 'Failed to delete task.', 'danger');
+        }
+    }
+
+    async function exportTasksExcel() {
+        const btn = document.getElementById('taskExportBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ Exporting...';
+        btn.disabled = true;
+
+        try {
+            const params = getFilterParams();
+            await API.exportTasks(params);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>

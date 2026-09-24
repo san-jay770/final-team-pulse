@@ -1,0 +1,19 @@
+{
+  "watch": [
+    "routes",
+    "services",
+    "middleware",
+    "utils",
+    "database/database.js",
+    "server.js"
+  ],
+  "ext": "js,json",
+  "ignore": [
+    "database/*.db*",
+    "database/sessions.db",
+    "database/team_pulse.db*",
+    "backups/*",
+    "node_modules/*"
+  ],
+  "delay": "1000"
+}

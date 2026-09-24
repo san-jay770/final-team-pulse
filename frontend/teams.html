@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teams - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1>Teams Management</h1>
+                <p>Configure team workspaces, monitor task throughput, and assign department leads.</p>
+            </div>
+            <div class="page-header-actions">
+                <a href="/team_form.html" class="btn btn-primary btn-sm">+ Add Team</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Team Name</th>
+                            <th>Description</th>
+                            <th>Team Admin</th>
+                            <th>Members</th>
+                            <th>Tasks (Done / Total)</th>
+                            <th>Progress</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamsTableBody">
+                        <tr><td colspan="7" style="text-align:center; padding:24px; color:#64748b;">Loading teams...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = await UI.initShell({ activeRoute: 'teams', allowedRoles: ['SUPER_ADMIN'], pageTitle: 'Teams' });
+        if (!user) return;
+        loadTeams();
+    });
+
+    async function loadTeams() {
+        const res = await API.getTeams();
+        const tbody = document.getElementById('teamsTableBody');
+
+        if (res && res.success && res.data) {
+            const teams = res.data;
+            if (teams.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#64748b;">No teams created yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = teams.map(t => `
+                <tr>
+                    <td><strong style="color: var(--text-main); font-size: 0.95rem;">${t.name}</strong></td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">${t.description || '-'}</td>
+                    <td>${t.admin_name ? `<span style="font-weight: 500;">${t.admin_name}</span>` : '<em style="color:#94a3b8;">None</em>'}</td>
+                    <td><span class="badge" style="background:#e0f2fe; color:#0369a1;">${t.member_count || 0} Members</span></td>
+                    <td><strong>${t.completed_tasks || 0}</strong> / ${t.total_tasks || 0}</td>
+                    <td>
+                        <div class="progress-container" style="min-width: 100px;">
+                            <div class="progress-track"><div class="progress-fill" style="width: ${t.completion_pct}%;"></div></div>
+                        </div>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="/team_form.html?id=${t.id}" class="btn btn-sm btn-secondary" style="padding: 4px 8px; font-size: 0.78rem;">Edit</a>
+                        <button onclick="deleteTeam(${t.id}, '${t.name.replace(/'/g, "\\'")}')" class="btn btn-sm" style="padding: 4px 8px; font-size: 0.78rem; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer;">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function deleteTeam(id, name) {
+        const res = await API.deleteTeam(id);
+        if (res && res.success) {
+            UI.showToast('Team deleted successfully.', 'success');
+            loadTeams();
+        } else {
+            UI.showToast(res.message || 'Failed to delete team.', 'danger');
+        }
+    }
+</script>
+</body>
+</html>

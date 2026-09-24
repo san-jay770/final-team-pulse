@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1>Performance Leaderboard</h1>
+                <p>Recognizing top performers, completed milestones, and team engagement points.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Rank</th>
+                            <th>Member</th>
+                            <th>Team</th>
+                            <th>Tasks Completed</th>
+                            <th>On Time</th>
+                            <th>Earned Points</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardTable">
+                        <tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">Loading leaderboard...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const user = await UI.initShell({ activeRoute: 'leaderboard', pageTitle: 'Leaderboard' });
+        if (!user) return;
+
+        const res = await API.getLeaderboard();
+        const tbody = document.getElementById('leaderboardTable');
+
+        if (res && res.success && res.data) {
+            const list = res.data;
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#64748b;">No leaderboard data yet.</td></tr>`;
+                return;
+            }
+
+            const badges = ['🥇', '🥈', '🥉'];
+
+            tbody.innerHTML = list.map(item => `
+                <tr ${item.id === user.id ? 'style="background: #eff6ff; font-weight: 600;"' : ''}>
+                    <td>
+                        <span style="font-size: 1.1rem; font-weight: 700;">
+                            ${badges[item.rank - 1] || `#${item.rank}`}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                                ${item.name ? item.name.charAt(0).toUpperCase() : 'U'}
+                            </div>
+                            <span style="color: var(--text-main);">${item.name} ${item.id === user.id ? '<span style="font-size: 0.75rem; color: #2563eb;">(You)</span>' : ''}</span>
+                        </div>
+                    </td>
+                    <td>${item.team_name || '-'}</td>
+                    <td><span class="badge badge-completed">${item.completed || 0} Done</span></td>
+                    <td><span style="color: #10b981; font-weight: 600;">${item.on_time || 0}</span></td>
+                    <td>
+                        <strong style="color: #2563eb; font-size: 1.05rem;">${item.points || 0} pts</strong>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+team-pulse-dc8bd-firebase-adminsdk-fbsvc-b5a24d5258.json
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

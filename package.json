@@ -1,0 +1,25 @@
+{
+  "name": "team-pulse",
+  "version": "2.0.0",
+  "description": "Team Pulse — Management System with Super Admin Control, Node.js, Express, SQLite3, Nodemailer, node-cron",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch-path=backend/routes --watch-path=backend/services --watch-path=backend/middleware --watch-path=backend/utils --watch-path=backend/database/database.js --watch-path=backend/server.js --watch-path=server.js backend/server.js",
+    "backend": "cd backend && npm start",
+    "install:backend": "cd backend && npm install",
+    "test": "node backend/test_api.js",
+    "backup": "node backend/utils/backup_recovery.js backup",
+    "recover": "node backend/utils/backup_recovery.js recover"
+  },
+  "keywords": [
+    "team-pulse",
+    "express",
+    "sqlite3",
+    "nodemailer",
+    "node-cron",
+    "super-admin"
+  ],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Form - Team Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div id="pageContent">
+        <div class="page-header">
+            <div class="page-header-text">
+                <h1 id="formHeading">Create New Task</h1>
+                <p>Assign tasks, set deadlines, and trigger instant email notifications to Super Admins & assignees.</p>
+            </div>
+            <div class="page-header-actions">
+                <a href="/tasks.html" class="btn btn-secondary btn-sm">&larr; Back to Tasks</a>
+            </div>
+        </div>
+
+        <div class="card" style="max-width: 750px; margin: 0 auto;">
+            <form id="taskForm">
+                <input type="hidden" id="taskId" value="">
+
+                <div class="form-group">
+                    <label for="taskTitle" class="form-label">Task Title <span style="color:#ef4444;">*</span></label>
+                    <input type="text" id="taskTitle" class="form-control" placeholder="e.g. Design Landing Page Wireframes" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="taskDesc" class="form-label">Description / Instructions</label>
+                    <textarea id="taskDesc" class="form-control" rows="4" placeholder="Provide detailed requirements, context, and expectations..."></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label for="taskTeam" class="form-label">Team / Department <span style="color:#ef4444;">*</span></label>
+                        <select id="taskTeam" class="form-control" required>
+                            <option value="">-- Select Team --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskMember" class="form-label">Assign To Member</label>
+                        <select id="taskMember" class="form-control">
+                            <option value="">-- Select Team First --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label for="taskPriority" class="form-label">Priority</label>
+                        <select id="taskPriority" class="form-control">
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskStatus" class="form-label">Status</label>
+                        <select id="taskStatus" class="form-control">
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px;">
+                    <div class="form-group">
+                        <label for="taskStartDate" class="form-label">Start Date</label>
+                        <input type="date" id="taskStartDate" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskDueDate" class="form-label">Due Date</label>
+                        <input type="date" id="taskDueDate" class="form-control">
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <a href="/tasks.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" id="saveTaskBtn" class="btn btn-primary" style="padding: 10px 24px;">Save & Notify &rarr;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    let currentUser = null;
+    let editingTaskId = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        currentUser = await UI.initShell({ activeRoute: 'tasks', allowedRoles: ['SUPER_ADMIN', 'ADMIN'], pageTitle: 'Task Form' });
+        if (!currentUser) return;
+
+        // Check if editing
+        const urlParams = new URLSearchParams(window.location.search);
+        editingTaskId = urlParams.get('id');
+
+        await loadTeams();
+
+        if (editingTaskId) {
+            document.getElementById('formHeading').textContent = 'Edit Task';
+            await loadTaskDetails(editingTaskId);
+        }
+
+        // Team selection changed -> reload members
+        document.getElementById('taskTeam').addEventListener('change', async (e) => {
+            await loadTeamMembers(e.target.value);
+        });
+
+        // Form submit
+        document.getElementById('taskForm').addEventListener('submit', handleSaveTask);
+    });
+
+    async function loadTeams() {
+        const res = await API.getTeams();
+        const select = document.getElementById('taskTeam');
+        if (res && res.success && res.data) {
+            let teams = res.data;
+            if (currentUser.role === 'ADMIN') {
+                teams = teams.filter(t => t.id === currentUser.team_id);
+            }
+            select.innerHTML = '<option value="">-- Select Team --</option>' + teams.map(t => `
+                <option value="${t.id}">${t.name}</option>
+            `).join('');
+
+            // If Admin, auto select their team
+            if (currentUser.role === 'ADMIN') {
+                select.value = currentUser.team_id;
+                select.disabled = true;
+                await loadTeamMembers(currentUser.team_id);
+            }
+        }
+    }
+
+    async function loadTeamMembers(teamId, selectedMemberId = null) {
+        const select = document.getElementById('taskMember');
+        if (!teamId) {
+            select.innerHTML = '<option value="">-- Select Team First --</option>';
+            return;
+        }
+
+        select.innerHTML = '<option value="">Loading members...</option>';
+        const res = await API.getTeamMembers(teamId);
+        if (res && res.success && (res.data || res.members)) {
+            const members = res.data || res.members;
+            select.innerHTML = '<option value="">Unassigned</option>' + members.map(m => `
+                <option value="${m.id}" ${selectedMemberId && String(selectedMemberId) === String(m.id) ? 'selected' : ''}>
+                    ${m.name} (${m.role.replace('_', ' ')})
+                </option>
+            `).join('');
+        }
+    }
+
+    async function loadTaskDetails(id) {
+        const res = await API.getTask(id);
+        if (res && res.success && res.data) {
+            const t = res.data;
+            document.getElementById('taskId').value = t.id;
+            document.getElementById('taskTitle').value = t.title || '';
+            document.getElementById('taskDesc').value = t.description || '';
+            document.getElementById('taskPriority').value = t.priority || 'Medium';
+            document.getElementById('taskStatus').value = t.status || 'Pending';
+            document.getElementById('taskStartDate').value = t.start_date ? t.start_date.split('T')[0] : '';
+            document.getElementById('taskDueDate').value = t.due_date ? t.due_date.split('T')[0] : '';
+
+            if (t.team_id) {
+                document.getElementById('taskTeam').value = t.team_id;
+                await loadTeamMembers(t.team_id, t.assigned_to);
+            }
+        }
+    }
+
+    async function handleSaveTask(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('saveTaskBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving & Sending Emails...';
+
+        const title = document.getElementById('taskTitle').value.trim();
+        const description = document.getElementById('taskDesc').value.trim();
+        const team_id = document.getElementById('taskTeam').value;
+        const assigned_to = document.getElementById('taskMember').value || null;
+        const priority = document.getElementById('taskPriority').value;
+        const status = document.getElementById('taskStatus').value;
+        const start_date = document.getElementById('taskStartDate').value || null;
+        const due_date = document.getElementById('taskDueDate').value || null;
+
+        const payload = { title, description, team_id, assigned_to, priority, status, start_date, due_date };
+
+        let res;
+        if (editingTaskId) {
+            res = await API.updateTask(editingTaskId, payload);
+        } else {
+            res = await API.createTask(payload);
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & Notify →';
+
+        if (res && res.success) {
+            UI.showToast(res.message || 'Task saved successfully! Email sent to Super Admin & assignee.', 'success');
+            setTimeout(() => window.location.href = '/tasks.html', 1000);
+        } else {
+            UI.showToast(res.message || 'Failed to save task.', 'danger');
+        }
+    }
+</script>
+</body>
+</html>
