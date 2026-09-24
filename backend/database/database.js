@@ -4,8 +4,9 @@
  */
 
 const sqlite3 = require('sqlite3').verbose();
-const path    = require('path');
-const fs      = require('fs');
+const path = require('path');
+const fs = require('fs');
+const { hashPassword } = require('../utils/passwordUtil');
 
 function resolveDbPath() {
   if (process.env.DB_PATH) {
@@ -204,34 +205,92 @@ async function initDatabase() {
   const taskColNames = taskCols.map(c => c.name);
 
   if (!taskColNames.includes('start_date')) {
-    await run('ALTER TABLE tasks ADD COLUMN start_date TEXT').catch(() => {});
+    await run('ALTER TABLE tasks ADD COLUMN start_date TEXT').catch(() => { });
   }
   if (!taskColNames.includes('updated_at')) {
-    await run('ALTER TABLE tasks ADD COLUMN updated_at TEXT').catch(() => {});
+    await run('ALTER TABLE tasks ADD COLUMN updated_at TEXT').catch(() => { });
   }
   if (!taskColNames.includes('completed_at')) {
-    await run('ALTER TABLE tasks ADD COLUMN completed_at TEXT').catch(() => {});
+    await run('ALTER TABLE tasks ADD COLUMN completed_at TEXT').catch(() => { });
   }
   if (!taskColNames.includes('points_awarded')) {
-    await run('ALTER TABLE tasks ADD COLUMN points_awarded INTEGER DEFAULT 0').catch(() => {});
+    await run('ALTER TABLE tasks ADD COLUMN points_awarded INTEGER DEFAULT 0').catch(() => { });
   }
 
   const userCols = await all('PRAGMA table_info(users)');
   const userColNames = userCols.map(c => c.name);
   if (!userColNames.includes('phone')) {
-    await run('ALTER TABLE users ADD COLUMN phone TEXT').catch(() => {});
+    await run('ALTER TABLE users ADD COLUMN phone TEXT').catch(() => { });
   }
 
   const suggCols = await all('PRAGMA table_info(suggestions)');
   const suggColNames = suggCols.map(c => c.name);
   // High-performance database indexes
-  await run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_users_team ON users(team_id)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_tasks_team ON tasks(team_id)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_activities_created ON activities(created_at DESC)').catch(() => {});
-  await run('CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)').catch(() => {});
+  await run('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_users_team ON users(team_id)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_tasks_team ON tasks(team_id)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_tasks_assigned ON tasks(assigned_to)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_activities_created ON activities(created_at DESC)').catch(() => { });
+  await run('CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)').catch(() => { });
+
+  // Create initial Super Admin only when database has no users
+  const userCount = await get('SELECT COUNT(*) AS count FROM users');
+
+  if (userCount && Number(userCount.count) === 0) {
+    console.log('[DB] No users found. Creating initial setup...');
+
+    const defaultTeams = [
+      ['Development', 'Software development team'],
+      ['Testing', 'Software testing team'],
+      ['AI & ML', 'Artificial Intelligence and Machine Learning team'],
+      ['Backend', 'Backend development team'],
+      ['Frontend', 'Frontend development team'],
+      ['Data Science', 'Data Science team'],
+      ['Cloud & DevOps', 'Cloud and DevOps team'],
+      ['UI/UX', 'UI/UX design team'],
+      ['Research', 'Research team'],
+      ['Support', 'Support team']
+    ];
+
+    for (const [name, description] of defaultTeams) {
+      await run(
+        'INSERT INTO teams (name, description) VALUES (?, ?)',
+        [name, description]
+      );
+    }
+
+    const adminEmail = process.env.INITIAL_ADMIN_EMAIL;
+    const adminPassword = process.env.INITIAL_ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.error(
+        '[DB] INITIAL_ADMIN_EMAIL and INITIAL_ADMIN_PASSWORD are required.'
+      );
+      return;
+    }
+
+    const hashedPassword = await hashPassword(adminPassword);
+
+    const firstTeam = await get(
+      'SELECT id FROM teams ORDER BY id ASC LIMIT 1'
+    );
+
+    await run(
+      `INSERT INTO users
+       (name, email, password, role, team_id, status)
+       VALUES (?, ?, ?, 'SUPER_ADMIN', ?, 'Active')`,
+      [
+        'Super Admin',
+        adminEmail.trim().toLowerCase(),
+        hashedPassword,
+        firstTeam ? firstTeam.id : null
+      ]
+    );
+
+    console.log('[DB] Initial Super Admin created successfully.');
+  }
+
 
   console.log('[DB] Database initialization complete.');
 }
