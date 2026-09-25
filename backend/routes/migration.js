@@ -160,22 +160,21 @@ router.post("/import", async (req, res) => {
       }
 
       // Notifications
-      for (const row of data.notifications || []) {
-        await run(
-          `INSERT INTO notifications
-           (id, user_id, type, message, related_id, is_read, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [
-            row.id,
-            row.user_id,
-            row.type,
-            row.message,
-            row.related_id,
-            row.is_read,
-            row.created_at
-          ]
-        );
-      }
+   for (const row of data.activities || []) {
+  await run(
+    `INSERT INTO activities
+     (id, user_id, activity, created_at, action, description)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      row.id,
+      row.user_id,
+      row.activity,
+      row.created_at,
+      row.action || "activity",
+      row.description || ""
+    ]
+  );
+}
 
       // Suggestions
       for (const row of data.suggestions || []) {
