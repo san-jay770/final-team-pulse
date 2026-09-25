@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const router = express.Router();
 const sqlite3 = require("sqlite3").verbose();
 
@@ -54,7 +54,6 @@ router.post("/import", async (req, res) => {
                 "notifications",
                 "doubts",
                 "suggestions",
-                "hit_points",
                 "password_resets",
                 "roles",
                 "team_members",
@@ -212,21 +211,6 @@ router.post("/import", async (req, res) => {
             }
 
             // Hit points
-            for (const row of data.hit_points || []) {
-                await run(
-                    `INSERT INTO hit_points
-           (id, user_id, title, description, importance, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-                    [
-                        row.id,
-                        row.user_id,
-                        row.title,
-                        row.description,
-                        row.importance,
-                        row.created_at
-                    ]
-                );
-            }
 
             // Team members
             for (const row of data.team_members || []) {
@@ -309,3 +293,4 @@ router.post("/import", async (req, res) => {
 });
 
 module.exports = router;
+
