@@ -4,6 +4,8 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
 router.post("/import", async (req, res) => {
+  let db;
+
   try {
     const secret = process.env.MIGRATION_SECRET;
 
@@ -16,14 +18,14 @@ router.post("/import", async (req, res) => {
 
     const data = req.body;
 
-    if (!data || !data.users || !data.teams) {
+    if (!data || !Array.isArray(data.users) || !Array.isArray(data.teams)) {
       return res.status(400).json({
         success: false,
         message: "Invalid migration data"
       });
     }
 
-    const db = new sqlite3.Database(
+    db = new sqlite3.Database(
       process.env.DB_PATH ||
       path.join(__dirname, "../database/team_pulse.db")
     );
@@ -36,10 +38,16 @@ router.post("/import", async (req, res) => {
         });
       });
 
+    const closeDb = () =>
+      new Promise((resolve) => {
+        if (!db) return resolve();
+        db.close(() => resolve());
+      });
+
     await run("BEGIN TRANSACTION");
 
     try {
-      // Clear existing application data
+      // Clear child tables first, then parent tables
       const tables = [
         "activities",
         "notifications",
@@ -65,9 +73,9 @@ router.post("/import", async (req, res) => {
           [
             row.id,
             row.name,
-            row.description,
-            row.admin_id,
-            row.created_at
+            row.description ?? null,
+            row.admin_id ?? null,
+            row.created_at ?? null
           ]
         );
       }
@@ -86,11 +94,11 @@ router.post("/import", async (req, res) => {
             row.email,
             row.password,
             row.role,
-            row.team_id,
-            row.points,
-            row.status,
-            row.created_at,
-            row.phone
+            row.team_id ?? null,
+            row.points ?? 0,
+            row.status ?? "Active",
+            row.created_at ?? null,
+            row.phone ?? null
           ]
         );
       }
@@ -98,9 +106,9 @@ router.post("/import", async (req, res) => {
       // =========================
       // TASKS
       // =========================
-      // attachment is excluded because
+      // attachment is intentionally excluded because
       // Render database does not currently have this column.
-      for (const row of data.tasks) {
+      for (const row of data.tasks || []) {
         await run(
           `INSERT INTO tasks
            (id, title, description, team_id, assigned_to, created_by,
@@ -110,18 +118,18 @@ router.post("/import", async (req, res) => {
           [
             row.id,
             row.title,
-            row.description,
+            row.description ?? null,
             row.team_id,
-            row.assigned_to,
-            row.created_by,
-            row.priority,
-            row.status,
-            row.due_date,
-            row.created_at,
-            row.completed_at,
-            row.points_awarded,
-            row.start_date,
-            row.updated_at
+            row.assigned_to ?? null,
+            row.created_by ?? null,
+            row.priority ?? "Medium",
+            row.status ?? "Pending",
+            row.due_date ?? null,
+            row.created_at ?? null,
+            row.completed_at ?? null,
+            row.points_awarded ?? 0,
+            row.start_date ?? null,
+            row.updated_at ?? null
           ]
         );
       }
@@ -129,6 +137,7 @@ router.post("/import", async (req, res) => {
       // =========================
       // ACTIVITIES
       // =========================
+      // Render requires activities.action to be NOT NULL.
       for (const row of data.activities || []) {
         await run(
           `INSERT INTO activities
@@ -136,11 +145,11 @@ router.post("/import", async (req, res) => {
            VALUES (?, ?, ?, ?, ?, ?)`,
           [
             row.id,
-            row.user_id,
-            row.activity,
-            row.created_at,
-            row.action || "activity",
-            row.description || ""
+            row.user_id ?? null,
+            row.activity ?? "Activity",
+            row.created_at ?? null,
+            row.action ?? "activity",
+            row.description ?? ""
           ]
         );
       }
@@ -159,12 +168,12 @@ router.post("/import", async (req, res) => {
             row.user_id,
             row.team_id,
             row.question,
-            row.answer,
-            row.status,
-            row.answered_by,
-            row.created_at,
-            row.answered_at,
-            row.title
+            row.answer ?? null,
+            row.status ?? "Open",
+            row.answered_by ?? null,
+            row.created_at ?? null,
+            row.answered_at ?? null,
+            row.title ?? null
           ]
         );
       }
@@ -182,9 +191,9 @@ router.post("/import", async (req, res) => {
             row.user_id,
             row.type,
             row.message,
-            row.related_id,
-            row.is_read,
-            row.created_at
+            row.related_id ?? null,
+            row.is_read ?? 0,
+            row.created_at ?? null
           ]
         );
       }
@@ -203,27 +212,29 @@ router.post("/import", async (req, res) => {
             row.user_id,
             row.team_id,
             row.suggestion,
-            row.status,
-            row.response,
-            row.reviewed_by,
-            row.created_at,
-            row.updated_at,
-            row.title
+            row.status ?? "New",
+            row.response ?? null,
+            row.reviewed_by ?? null,
+            row.created_at ?? null,
+            row.updated_at ?? null,
+            row.title ?? null
           ]
         );
       }
 
+      // Commit everything
       await run("COMMIT");
 
-      db.close();
+      await closeDb();
+      db = null;
 
-      res.json({
+      return res.json({
         success: true,
         message: "Local Team Pulse data imported successfully",
         counts: {
           teams: data.teams.length,
           users: data.users.length,
-          tasks: data.tasks.length,
+          tasks: (data.tasks || []).length,
           activities: (data.activities || []).length,
           notifications: (data.notifications || []).length,
           doubts: (data.doubts || []).length,
@@ -233,14 +244,19 @@ router.post("/import", async (req, res) => {
 
     } catch (error) {
       await run("ROLLBACK").catch(() => {});
-      db.close();
+      await closeDb();
+      db = null;
       throw error;
     }
 
   } catch (error) {
     console.error("[MIGRATION ERROR]", error);
 
-    res.status(500).json({
+    if (db) {
+      await new Promise((resolve) => db.close(() => resolve()));
+    }
+
+    return res.status(500).json({
       success: false,
       message: "Migration failed",
       error: error.message
