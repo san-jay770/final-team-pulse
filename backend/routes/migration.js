@@ -54,9 +54,6 @@ router.post("/import", async (req, res) => {
                 "notifications",
                 "doubts",
                 "suggestions",
-                "password_resets",
-                "roles",
-                "team_members",
                 "tasks",
                 "users",
                 "teams"
@@ -213,50 +210,10 @@ router.post("/import", async (req, res) => {
             // Hit points
 
             // Team members
-            for (const row of data.team_members || []) {
-                await run(
-                    `INSERT INTO team_members
-           (id, team_id, user_id, joined_at)
-           VALUES (?, ?, ?, ?)`,
-                    [
-                        row.id,
-                        row.team_id,
-                        row.user_id,
-                        row.joined_at
-                    ]
-                );
-            }
 
             // Roles
-            for (const row of data.roles || []) {
-                await run(
-                    `INSERT INTO roles
-           (id, user_id, role)
-           VALUES (?, ?, ?)`,
-                    [
-                        row.id,
-                        row.user_id,
-                        row.role
-                    ]
-                );
-            }
 
             // Password resets
-            for (const row of data.password_resets || []) {
-                await run(
-                    `INSERT INTO password_resets
-           (id, user_id, token, expires_at, used, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-                    [
-                        row.id,
-                        row.user_id,
-                        row.token,
-                        row.expires_at,
-                        row.used,
-                        row.created_at
-                    ]
-                );
-            }
 
             await run("COMMIT");
             await run("PRAGMA foreign_keys = ON");
@@ -293,4 +250,6 @@ router.post("/import", async (req, res) => {
 });
 
 module.exports = router;
+
+
 
