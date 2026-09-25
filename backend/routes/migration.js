@@ -39,7 +39,7 @@ router.post("/import", async (req, res) => {
     await run("BEGIN TRANSACTION");
 
     try {
-      // Clear only tables that exist in the current Render schema.
+      // Clear existing application data
       const tables = [
         "activities",
         "notifications",
@@ -54,7 +54,9 @@ router.post("/import", async (req, res) => {
         await run(`DELETE FROM ${table}`);
       }
 
-      // Teams
+      // =========================
+      // TEAMS
+      // =========================
       for (const row of data.teams) {
         await run(
           `INSERT INTO teams
@@ -70,7 +72,9 @@ router.post("/import", async (req, res) => {
         );
       }
 
-      // Users
+      // =========================
+      // USERS
+      // =========================
       for (const row of data.users) {
         await run(
           `INSERT INTO users
@@ -91,9 +95,11 @@ router.post("/import", async (req, res) => {
         );
       }
 
-      // Tasks
-      // attachment is intentionally excluded because
-      // the Render database does not currently have that column.
+      // =========================
+      // TASKS
+      // =========================
+      // attachment is excluded because
+      // Render database does not currently have this column.
       for (const row of data.tasks) {
         await run(
           `INSERT INTO tasks
@@ -120,7 +126,9 @@ router.post("/import", async (req, res) => {
         );
       }
 
-      // Activities
+      // =========================
+      // ACTIVITIES
+      // =========================
       for (const row of data.activities || []) {
         await run(
           `INSERT INTO activities
@@ -131,13 +139,15 @@ router.post("/import", async (req, res) => {
             row.user_id,
             row.activity,
             row.created_at,
-            row.action,
-            row.description
+            row.action || "activity",
+            row.description || ""
           ]
         );
       }
 
-      // Doubts
+      // =========================
+      // DOUBTS
+      // =========================
       for (const row of data.doubts || []) {
         await run(
           `INSERT INTO doubts
@@ -159,24 +169,29 @@ router.post("/import", async (req, res) => {
         );
       }
 
-      // Notifications
-   for (const row of data.activities || []) {
-  await run(
-    `INSERT INTO activities
-     (id, user_id, activity, created_at, action, description)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      row.id,
-      row.user_id,
-      row.activity,
-      row.created_at,
-      row.action || "activity",
-      row.description || ""
-    ]
-  );
-}
+      // =========================
+      // NOTIFICATIONS
+      // =========================
+      for (const row of data.notifications || []) {
+        await run(
+          `INSERT INTO notifications
+           (id, user_id, type, message, related_id, is_read, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [
+            row.id,
+            row.user_id,
+            row.type,
+            row.message,
+            row.related_id,
+            row.is_read,
+            row.created_at
+          ]
+        );
+      }
 
-      // Suggestions
+      // =========================
+      // SUGGESTIONS
+      // =========================
       for (const row of data.suggestions || []) {
         await run(
           `INSERT INTO suggestions
@@ -215,11 +230,13 @@ router.post("/import", async (req, res) => {
           suggestions: (data.suggestions || []).length
         }
       });
+
     } catch (error) {
       await run("ROLLBACK").catch(() => {});
       db.close();
       throw error;
     }
+
   } catch (error) {
     console.error("[MIGRATION ERROR]", error);
 
